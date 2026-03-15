@@ -3,6 +3,7 @@ import HeroSlider from "../HeroSlider";
 import { BookOpen, Pen, GraduationCap, Palette, Briefcase, Search } from "lucide-react";
 import Card from "../card";
 import SEO from "../SEO";
+import api from '../../api/axios';
 
 const ShoppingPage = () => {
   const [activeCategory, setActiveCategory] = useState('All');
@@ -22,7 +23,7 @@ const ShoppingPage = () => {
   React.useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await import('../api/axios').then(m => m.default.get('/products'));
+        const response = await api.get('/products');
         const allProducts = response.data.data || response.data || [];
         setProducts(allProducts);
       } catch (error) {

@@ -1,0 +1,51 @@
+﻿[dotenv@17.3.1] injecting env (10) from .env -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+Connected to MongoDB for Admin Seeding
+node : Seeding failed 
+TypeError: next is not a 
+function
+At line:1 char:1
++ node seedAdmin.js 2>&1 | 
+Out-File -Encoding utf8 
+err2.txt
++ ~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo           
+   : NotSpecified: (Seeding  
+   failed ... not a functi   
+ on:String) [], RemoteExc    
+eption
+    + FullyQualifiedErrorId  
+   : NativeCommandError
+ 
+    at model.<anonymous> (fil
+e:///C:/Users/Dell-Dxb/Deskto
+p/Almas-books-Ecom/backend/sr
+c/models/user.model.js:37:5)
+    at async Kareem.execPre (
+C:\Users\Dell-Dxb\Desktop\Alm
+as-books-Ecom\backend\node_mo
+dules\kareem\index.js:70:24)
+    at async model.$__save (C
+:\Users\Dell-Dxb\Desktop\Alma
+s-books-Ecom\backend\node_mod
+ules\mongoose\lib\model.js:37
+6:5)
+    at async model.save (C:\U
+sers\Dell-Dxb\Desktop\Almas-b
+ooks-Ecom\backend\node_module
+s\mongoose\lib\model.js:642:5
+)
+    at async C:\Users\Dell-Dx
+b\Desktop\Almas-books-Ecom\ba
+ckend\node_modules\mongoose\l
+ib\model.js:2778:9
+    at async Promise.all 
+(index 0)
+    at async Function.create 
+(C:\Users\Dell-Dxb\Desktop\Al
+mas-books-Ecom\backend\node_m
+odules\mongoose\lib\model.js:
+2763:11)
+    at async seedAdmin (file:
+///C:/Users/Dell-Dxb/Desktop/
+Almas-books-Ecom/backend/seed
+Admin.js:21:23)

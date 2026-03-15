@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react'
 import { Upload, X, FileText, Printer } from 'lucide-react';
-
+import api from '../api/axios';
 
 const PrintForm = () => {
   const [formData, setFormData] = useState({
@@ -55,7 +55,6 @@ const PrintForm = () => {
       formPayload.append('phone', formData.phone);
       formPayload.append('notes', formData.notes);
 
-      const { default: api } = await import('../api/axios');
       await api.post('/print-request', formPayload, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });

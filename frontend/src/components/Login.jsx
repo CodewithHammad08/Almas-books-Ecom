@@ -16,9 +16,14 @@ const Login = () => {
     setIsLoading(true);
     setError(null);
     try {
-      await login(email, password);
-      // On success, redirect to home
-      navigate('/');
+      const res = await login(email, password);
+      // Determine if admin or not
+      const userRole = res.data?.user?.role;
+      if (userRole === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/shop');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');
     } finally {

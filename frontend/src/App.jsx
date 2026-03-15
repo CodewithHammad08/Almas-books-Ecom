@@ -12,9 +12,7 @@ import Loader from './components/Loader';
 import NotFound from './components/Pages/Notfound';
 import Login from './components/Login';
 import Register from './components/Register';
-
-
-
+import AdminDashboard from './components/Pages/AdminDashboard';
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [fadeOut, setFadeOut] = useState(false);
@@ -56,6 +54,7 @@ const App = () => {
         <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/admin" element={<AdminDashboard />} />
         <Route path="*" element={<NotFound />} />
 
       </Routes>

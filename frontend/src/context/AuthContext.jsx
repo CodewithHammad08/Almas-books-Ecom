@@ -37,7 +37,6 @@ export const AuthProvider = ({ children }) => {
     const register = async (userData) => {
         // adjust fields as needed for backend
         const response = await api.post('/auth/register', userData);
-        setUser(response.data.data.user); 
         return response.data;
     };
 
