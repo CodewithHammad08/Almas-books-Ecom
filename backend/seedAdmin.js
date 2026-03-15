@@ -11,18 +11,18 @@ const seedAdmin = async () => {
         console.log("Connected to MongoDB for Admin Seeding");
 
         // Check if admin already exists
-        const existingAdmin = await User.findOne({ email: "admin@almas.com" });
+        const existingAdmin = await User.findOne({ email: "zubair36@gmail.com" });
         if (existingAdmin) {
-            console.log("Admin account (admin@almas.com) already exists. Skipping.");
+            console.log("Admin account (zubair36@gmail.com) already exists. Skipping.");
             process.exit(0);
             return;
         }
 
         const admin = await User.create({
             name: "Owner",
-            email: "admin@almas.com",
+            email: "zubair36@gmail.com",
             password: "password123", // Pre-save hook will hash this
-            phone: "0000000000",
+            phone: "9833660690",
             role: "admin",
             address: {
                 street: "Store HQ"

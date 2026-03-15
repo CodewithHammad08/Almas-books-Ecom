@@ -14,7 +14,14 @@ const UserSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true
+    required: function() {
+      return this.authProvider === 'local';
+    }
+  },
+  authProvider: {
+    type: String,
+    enum: ['local', 'google'],
+    default: 'local'
   },
   phone: {
     type: String
@@ -32,7 +39,7 @@ const UserSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 UserSchema.pre("save", async function () {
-    if(!this.isModified("password")) return;
+    if(!this.isModified("password") || !this.password) return;
     this.password = await bcrypt.hash(this.password, 10);
 })
 

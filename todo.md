@@ -126,5 +126,28 @@ Right now, the dummy products in MongoDB do not have images attached, so we are 
 
 ---
 
+## 🔑 Adding Google Login OAuth
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a new Project and search for **APIs & Services > Credentials**.
+3. Create new **OAuth 2.0 Client IDs** (Select "Web Application").
+   - Set **Authorized JavaScript origins** to `http://localhost:5173`.
+   - Set **Authorized redirect URIs** to `http://localhost:5173`.
+4. Copy your **Client ID** and paste it in exactly two places:
+   * Inside your `backend/.env` file: `GOOGLE_CLIENT_ID=copied_key`
+   * Inside your `frontend/.env` file: `VITE_GOOGLE_CLIENT_ID=copied_key`
+
+Once set, both `Login.jsx` and `Register.jsx` pages will securely launch Google's account selection pop-up and authorize them using Google Tokens directly!
+
+---
+
+## 👑 Using Your Own Admin Account
+I generated the script `backend/seedAdmin.js`. If you'd like to use your *own* email instead of the dummy `admin@almas.com`:
+1. Open the file `backend/seedAdmin.js`.
+2. Change the string on line 17 (`email: "admin@almas.com",`) to your real email.
+3. Open a terminal in `backend/` and run `node seedAdmin.js`.
+4. You will permanently be able to log in to the application and automatically route to the Admin Dashboard interface using your personal email!
+
+---
+
 ### Need Help?
 You've got the foundational setup done! Let me know if you want me to write code to connect a specific component right now.

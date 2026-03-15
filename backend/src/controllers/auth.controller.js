@@ -3,6 +3,9 @@ import { ApiError } from "../utils/ApiError.js"
 import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { OAuth2Client } from "google-auth-library";
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const generateAccessAndRefreshTokens = async(userId) =>{
     try {
@@ -103,8 +106,59 @@ const getUserProfile = asyncHandler(async(req, res) => {
     )
 })
 
+const googleLogin = asyncHandler(async (req, res) => {
+    const { token } = req.body;
+    
+    if (!token) {
+        throw new ApiError(400, "Google token is required");
+    }
+
+    try {
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+        const { name, email } = ticket.getPayload();
+
+        let user = await User.findOne({ email });
+
+        if (!user) {
+            user = await User.create({
+                name,
+                email,
+                authProvider: 'google',
+                role: 'user'
+            });
+        }
+
+        const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(user._id);
+        const loggedInUser = await User.findById(user._id).select("-password");
+
+        const options = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production"
+        };
+
+        return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(
+            new ApiResponse(
+                200, 
+                { user: loggedInUser, accessToken, refreshToken },
+                "User logged in securely via Google"
+            )
+        );
+
+    } catch (error) {
+        throw new ApiError(401, "Invalid Google token");
+    }
+});
+
 export {
     registerUser,
     loginUser,
-    getUserProfile
+    getUserProfile,
+    googleLogin
 }

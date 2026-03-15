@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext'; // Import the Auth context
+import { GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -9,7 +10,7 @@ const Login = () => {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth(); // Destructure login function from context
+  const { login, googleLogin } = useAuth(); // Destructure login function from context
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,6 +27,24 @@ const Login = () => {
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await googleLogin(credentialResponse.credential);
+      const userRole = res.data?.user?.role || res.user?.role;
+      if (userRole === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/shop');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Google Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -95,6 +114,21 @@ const Login = () => {
             {isLoading ? 'Signing In...' : 'Sign In'}
             {!isLoading && <ArrowRight size={20} strokeWidth={2.5} />}
           </button>
+          
+          <div className="relative flex items-center justify-center py-4">
+            <span className="absolute bg-neutral-900/80 px-4 text-xs font-medium text-neutral-500 uppercase tracking-widest z-10">Or Continue With</span>
+            <div className="w-full h-px bg-neutral-800"></div>
+          </div>
+          
+          <div className="flex justify-center w-full">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google Login Failed')}
+              theme="filled_black"
+              size="large"
+              shape="pill"
+            />
+          </div>
         </form>
         
         <div className="mt-8 text-center text-neutral-500 text-sm">
