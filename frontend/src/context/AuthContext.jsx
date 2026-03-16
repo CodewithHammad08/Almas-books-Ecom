@@ -8,50 +8,67 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
+    // Initialize from localStorage so page refresh doesn't lose session
+    const [user, setUser] = useState(() => {
+        try {
+            const stored = localStorage.getItem('almas_user');
+            return stored ? JSON.parse(stored) : null;
+        } catch {
+            return null;
+        }
+    });
     const [loading, setLoading] = useState(true);
 
+    // On mount: verify cookie is still valid with the backend
     useEffect(() => {
-        const checkUserLoggedIn = async () => {
+        const verifySession = async () => {
             try {
-                // If there's a profile route, check it. Let's assume /auth/profile exists
                 const response = await api.get('/auth/profile');
-                setUser(response.data.data); // Adjust based on your backend response format
-            } catch (error) {
-                console.log("No user logged in");
+                const freshUser = response.data.data;
+                setUser(freshUser);
+                localStorage.setItem('almas_user', JSON.stringify(freshUser));
+            } catch {
+                // Cookie expired or invalid — clear local state
                 setUser(null);
+                localStorage.removeItem('almas_user');
             } finally {
                 setLoading(false);
             }
         };
 
-        checkUserLoggedIn();
+        verifySession();
     }, []);
 
     const login = async (email, password) => {
         const response = await api.post('/auth/login', { email, password });
-        setUser(response.data.data.user); // Assuming response.data.data.user
+        const loggedInUser = response.data.data.user;
+        setUser(loggedInUser);
+        localStorage.setItem('almas_user', JSON.stringify(loggedInUser));
         return response.data;
     };
 
     const register = async (userData) => {
-        // adjust fields as needed for backend
         const response = await api.post('/auth/register', userData);
         return response.data;
     };
 
     const googleLogin = async (token) => {
         const response = await api.post('/auth/google', { token });
-        setUser(response.data.data.user);
+        const loggedInUser = response.data.data.user;
+        setUser(loggedInUser);
+        localStorage.setItem('almas_user', JSON.stringify(loggedInUser));
         return response.data;
     };
 
     const logout = async () => {
         try {
             await api.post('/auth/logout');
-            setUser(null);
         } catch (error) {
-            console.error("Logout failed", error);
+            console.error("Logout endpoint error (still logging out locally)", error);
+        } finally {
+            // Always clear local state regardless of backend response
+            setUser(null);
+            localStorage.removeItem('almas_user');
         }
     };
 

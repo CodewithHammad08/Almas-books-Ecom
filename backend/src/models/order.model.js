@@ -1,36 +1,73 @@
 import mongoose from "mongoose";
 
-const OrderSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
-  },
-  items: [
-    {
-      product: {
+const OrderItemSchema = new mongoose.Schema({
+    product: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Product"
-      },
-      quantity: Number,
-      price: Number
+        ref: "Product",
+        required: true
+    },
+    // Snapshot fields — stored at order time in case product is later edited/deleted
+    productName: { type: String, required: true },
+    productImage: { type: String, default: "" },
+    quantity: { type: Number, required: true, min: 1 },
+    price: { type: Number, required: true }
+}, { _id: false });
+
+const OrderSchema = new mongoose.Schema({
+    orderNumber: {
+        type: String,
+        unique: true
+    },
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+    },
+    items: {
+        type: [OrderItemSchema],
+        required: true,
+        validate: [(arr) => arr.length > 0, "Order must have at least one item"]
+    },
+    totalPrice: {
+        type: Number,
+        required: true,
+        min: 0
+    },
+    shippingAddress: {
+        name: { type: String, required: true },
+        phone: { type: String, required: true },
+        street: { type: String, required: true },
+        city: { type: String, required: true },
+        pincode: { type: String, required: true }
+    },
+    paymentMethod: {
+        type: String,
+        enum: ["COD", "Online"],
+        required: true
+    },
+    paymentStatus: {
+        type: String,
+        enum: ["pending", "paid", "failed", "refunded"],
+        default: "pending"
+    },
+    orderStatus: {
+        type: String,
+        enum: ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"],
+        default: "pending"
+    },
+    notes: {
+        type: String,
+        default: ""
     }
-  ],
-  totalPrice: Number,
-  shippingAddress: {
-    name: String,
-    phone: String,
-    address: String,
-    pincode: String
-  },
-  paymentMethod: {
-    type: String,
-    enum: ["COD", "Online"]
-  },
-  status: {
-    type: String,
-    enum: ["pending", "confirmed", "shipped", "delivered"],
-    default: "pending"
-  }
 }, { timestamps: true });
+
+// Auto-generate order number before save
+OrderSchema.pre("save", async function (next) {
+    if (!this.orderNumber) {
+        const count = await mongoose.model("Order").countDocuments();
+        this.orderNumber = `ALM-${String(count + 1).padStart(5, "0")}`;
+    }
+    next();
+});
 
 export const Order = mongoose.model("Order", OrderSchema);

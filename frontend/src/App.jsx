@@ -6,13 +6,22 @@ import ShoppingPage from './components/Pages/ShoppingPage';
 import PrintServices from './components/Pages/PrintServices';
 import About from './components/Pages/About';
 import Contact from './components/Pages/Contact';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Cart from './components/Cart';
 import Loader from './components/Loader';
 import NotFound from './components/Pages/Notfound';
 import Login from './components/Login';
 import Register from './components/Register';
 import AdminDashboard from './components/Pages/AdminDashboard';
+import { useAuth } from './context/AuthContext';
+
+// Redirects logged-in users away from login/register pages
+const GuestRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) return null; // wait for session check
+  if (user) return <Navigate to={user.role === 'admin' ? '/admin' : '/shop'} replace />;
+  return children;
+};
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [fadeOut, setFadeOut] = useState(false);
@@ -52,8 +61,8 @@ const App = () => {
         <Route path="/print-services" element={<PrintServices />} />
         <Route path="/shop" element={<ShoppingPage />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
+        <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="*" element={<NotFound />} />
 

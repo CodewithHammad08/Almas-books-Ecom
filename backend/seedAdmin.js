@@ -1,41 +1,51 @@
+/**
+ * seedAdmin.js
+ * Creates admin accounts in the new 'admins' collection.
+ * Run from backend/: node seedAdmin.js
+ */
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { DB_NAME } from "./src/constant.js";
-import { User } from "./src/models/user.model.js";
+import { Admin } from "./src/models/admin.model.js";
 
 dotenv.config({ path: "./.env" });
+
+const ADMINS = [
+    {
+        name: "Hammad",
+        email: "hammaddalvi905@gmail.com",
+        password: "Hammad@2006",
+        role: "superadmin",
+        phone: ""
+    },
+    {
+        name: "Owner",
+        email: "zubair36@gmail.com",
+        password: "password123",
+        role: "admin",
+        phone: ""
+    }
+];
 
 const seedAdmin = async () => {
     try {
         await mongoose.connect(`${process.env.MONGODB_URI}/${DB_NAME}`);
-        console.log("Connected to MongoDB for Admin Seeding");
+        console.log("✅ Connected to MongoDB\n");
 
-        // Check if admin already exists
-        const existingAdmin = await User.findOne({ email: "zubair36@gmail.com" });
-        if (existingAdmin) {
-            console.log("Admin account (zubair36@gmail.com) already exists. Skipping.");
-            process.exit(0);
-            return;
+        for (const data of ADMINS) {
+            const existing = await Admin.findOne({ email: data.email });
+            if (existing) {
+                console.log(`⚠️  Already exists: ${data.email} (${data.role}) — skipped`);
+                continue;
+            }
+            await Admin.create(data);
+            console.log(`✅ Created: ${data.email} | role: ${data.role} | password: ${data.password}`);
         }
 
-        const admin = await User.create({
-            name: "Owner",
-            email: "zubair36@gmail.com",
-            password: "password123", // Pre-save hook will hash this
-            phone: "9833660690",
-            role: "admin",
-            address: {
-                street: "Store HQ"
-            }
-        });
-
-        console.log("Admin account created successfully!");
-        console.log("Login: admin@almas.com");
-        console.log("Pass: password123");
-
+        console.log("\n🎉 Admin seeding complete!");
         process.exit(0);
     } catch (error) {
-        console.error("Seeding failed", error);
+        console.error("❌ Seeding failed:", error.message);
         process.exit(1);
     }
 };
