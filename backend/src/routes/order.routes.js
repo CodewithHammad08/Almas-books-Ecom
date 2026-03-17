@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { createOrder, getUserOrders, getOrderById, getAllOrders, updateOrderStatus } from "../controllers/order.controller.js";
+import { getAdminStats } from "../controllers/admin.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { isAdmin } from "../middlewares/admin.middleware.js";
 
@@ -14,6 +15,7 @@ router.route("/").post(createOrder)
 router.route("/:id").get(getOrderById);
 
 // Admin routes
+router.route("/admin/stats").get(isAdmin, getAdminStats);
 router.route("/all/orders").get(isAdmin, getAllOrders);
 router.route("/:id/status").put(isAdmin, updateOrderStatus);
 

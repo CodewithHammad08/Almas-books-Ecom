@@ -13,6 +13,7 @@ import NotFound from './components/Pages/Notfound';
 import Login from './components/Login';
 import Register from './components/Register';
 import AdminDashboard from './components/Pages/AdminDashboard';
+import MyOrders from './components/Pages/MyOrders';
 import { useAuth } from './context/AuthContext';
 
 // Redirects logged-in users away from login/register pages
@@ -64,6 +65,7 @@ const App = () => {
         <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
         <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/my-orders" element={<MyOrders />} />
         <Route path="*" element={<NotFound />} />
 
       </Routes>

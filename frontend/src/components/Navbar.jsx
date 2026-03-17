@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Menu, X, ShoppingBag, ShoppingCart, User, LogOut, LayoutDashboard } from 'lucide-react';
+import { Search, Menu, X, ShoppingBag, ShoppingCart, User, LogOut, LayoutDashboard, MapPin, ClipboardList } from 'lucide-react';
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { user, logout, loading } = useAuth();
+  const { cartCount } = useCart();
   const navigate = useNavigate();
   const menuRef = useRef(null);
+
+  // Load saved delivery address from localStorage
+  const savedAddress = (() => { try { return JSON.parse(localStorage.getItem('savedAddress') || 'null'); } catch { return null; } })();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -107,9 +112,27 @@ const Navbar = () => {
                           {user.role}
                         </span>
                       </div>
-                      {/* Actions */}
+                  {/* Actions */}
                       <div className="p-2 flex flex-col gap-1">
-                        {user.role === 'admin' && (
+                        {/* Saved delivery address */}
+                        {savedAddress?.street && (
+                          <div className="px-3 py-2 rounded-xl bg-neutral-800/60 border border-neutral-700/50 mb-1">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <MapPin size={11} className="text-amber-500 shrink-0" />
+                              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Last Delivery Address</span>
+                            </div>
+                            <p className="text-neutral-300 text-xs leading-relaxed">{savedAddress.street}, {savedAddress.city}</p>
+                          </div>
+                        )}
+                        <Link
+                          to="/my-orders"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-neutral-300 hover:text-white hover:bg-neutral-800 transition-all duration-200"
+                        >
+                          <ClipboardList size={16} className="text-amber-500" />
+                          My Orders
+                        </Link>
+                        {(user.role === 'admin' || user.role === 'superadmin') && (
                           <Link
                             to="/admin"
                             onClick={() => setUserMenuOpen(false)}
@@ -144,7 +167,9 @@ const Navbar = () => {
               <div className="p-2.5 rounded-full bg-neutral-900/50 border border-neutral-700 text-neutral-300 hover:text-amber-500 hover:border-amber-500 hover:bg-black transition-all duration-300">
                 <ShoppingCart size={20} />
               </div>
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-black text-[10px] font-bold flex items-center justify-center rounded-full animate-bounce">2</span>
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-black text-[10px] font-bold flex items-center justify-center rounded-full">{cartCount}</span>
+              )}
             </Link>
         </div>
 
@@ -201,7 +226,7 @@ const Navbar = () => {
 
           <Link to="/cart" onClick={() => setIsOpen(false)} className="text-lg font-medium text-neutral-300 hover:text-amber-400 transition-colors border-b border-white/5 pb-3 flex items-center justify-between">
             Cart
-            <span className="bg-amber-500 text-black text-xs font-bold px-2 py-0.5 rounded-full">2 Items</span>
+            {cartCount > 0 && <span className="bg-amber-500 text-black text-xs font-bold px-2 py-0.5 rounded-full">{cartCount} Items</span>}
           </Link>
           <Link to="/shop" onClick={() => setIsOpen(false)} className="text-lg font-bold text-black bg-amber-500 rounded-xl p-3 text-center hover:bg-amber-600 transition-colors flex items-center justify-center gap-2">
             <ShoppingBag size={20} /> Shop Now

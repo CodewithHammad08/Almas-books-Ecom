@@ -5,30 +5,41 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 const submitPrintRequest = asyncHandler(async (req, res) => {
-    const { name, phone, copies, printType, notes } = req.body;
+    const { name, phone, copies, printType, notes, paperSize, bindingType } = req.body;
 
     if (!name || !phone || !copies || !printType) {
         throw new ApiError(400, "Name, phone, copies, and printType are required");
     }
 
-    let fileUrl = "";
-    if (req.file) {
-        const uploadedFile = await uploadOnCloudinary(req.file.path);
-        if (uploadedFile) {
-            fileUrl = uploadedFile.url;
-        } else {
-             throw new ApiError(500, "Error uploading document file to Cloudinary");
-        }
-    } else {
+    // Normalize printType values from frontend to match model enum
+    const printTypeMap = {
+        "black & white": "black-white",
+        "black&white": "black-white",
+        "color": "color",
+        "colour": "color",
+        "both-sides": "both-sides",
+        "both sides": "both-sides",
+    };
+    const normalizedType = printTypeMap[printType.toLowerCase()] || "black-white";
+
+    if (!req.file) {
         throw new ApiError(400, "Print request document file is required");
+    }
+
+    const uploadedFile = await uploadOnCloudinary(req.file.path);
+    if (!uploadedFile) {
+        throw new ApiError(500, "Error uploading document file to Cloudinary");
     }
 
     const printRequest = await PrintRequest.create({
         name,
         phone,
-        fileUrl,
+        fileUrl: uploadedFile.secure_url,  // Always use HTTPS so browsers can render PDFs inline
+        fileName: req.file.originalname,
         copies: Number(copies),
-        printType,
+        printType: normalizedType,
+        paperSize: paperSize || "A4",
+        bindingType: bindingType || "none",
         notes,
         status: "pending"
     });

@@ -15,7 +15,8 @@ const createOrder = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Shipping address and payment method are required");
     }
 
-    // Process each item to check stock and decrement stock
+    // Process each item to check stock, decrement stock, and build snapshots
+    const enrichedItems = [];
     for (const item of items) {
         const product = await Product.findById(item.product);
         
@@ -30,15 +31,24 @@ const createOrder = asyncHandler(async (req, res) => {
         // Decrement stock
         product.stock -= item.quantity;
         await product.save();
+
+        // Build snapshot so order record is self-contained
+        enrichedItems.push({
+            product: product._id,
+            productName: product.name,
+            productImage: product.images?.[0]?.url || product.image || "",
+            quantity: item.quantity,
+            price: item.price
+        });
     }
 
     const order = await Order.create({
         user: req.user._id,
-        items,
+        items: enrichedItems,
         totalPrice,
         shippingAddress,
         paymentMethod,
-        status: "pending"
+        orderStatus: "pending"
     });
 
     return res.status(201).json(new ApiResponse(201, order, "Order created successfully"));
@@ -78,8 +88,9 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    if (!status) {
-        throw new ApiError(400, "Order status is required");
+    const validStatuses = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"];
+    if (!status || !validStatuses.includes(status)) {
+        throw new ApiError(400, `Invalid order status. Must be one of: ${validStatuses.join(", ")}`);
     }
 
     const order = await Order.findById(id);
@@ -88,7 +99,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Order not found");
     }
 
-    order.status = status;
+    order.orderStatus = status;
     await order.save();
 
     return res.status(200).json(new ApiResponse(200, order, "Order status updated successfully"));

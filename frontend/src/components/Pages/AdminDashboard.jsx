@@ -1,8 +1,107 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { Package, Users, ShoppingCart, Activity, X, Plus, Trash2, Pencil, ImageOff, ChevronDown, AlertCircle, CheckCircle } from 'lucide-react';
+import { Package, Users, ShoppingCart, Activity, X, Plus, Trash2, Pencil, ImageOff, ChevronDown, AlertCircle, CheckCircle, RefreshCw, ExternalLink, Download } from 'lucide-react';
 import api from '../../api/axios';
+
+
+// ─── FILE VIEWER MODAL ─────────────────────────────────────────────────────────
+const FileViewerModal = ({ file, onClose }) => {
+  if (!file) return null;
+  // Always use https — ensure fl_inline is present for Cloudinary raw URLs
+  const rawUrl = (file.fileUrl || '').replace(/^http:\/\//, 'https://');
+  const url = rawUrl.includes('/upload/') && !rawUrl.includes('fl_inline')
+    ? rawUrl.replace('/upload/', '/upload/fl_inline/')
+    : rawUrl;
+
+  const ext = (file.fileName || '').split('.').pop().toLowerCase();
+  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+  const isPdf = ext === 'pdf';
+  // DOC, DOCX, etc. — browsers cannot render these natively; provide download
+  const isDownloadOnly = !isImage && !isPdf;
+
+  return (
+    <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 bg-neutral-900 border-b border-neutral-800 shrink-0">
+        <div className="flex items-center gap-3">
+          <span className="text-xl">{isImage ? '🖼️' : '📄'}</span>
+          <div>
+            <p className="text-white font-bold text-sm truncate max-w-sm">{file.fileName || 'Document'}</p>
+            <p className="text-neutral-500 text-xs capitalize">
+              {file.name} · {file.printType?.replace('-', ' ')} · {file.copies} copies
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold rounded-xl transition-colors"
+          >
+            <Download size={14} /> Download File
+          </a>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors ml-1">
+            <X size={20} />
+          </button>
+        </div>
+      </div>
+
+      {/* Viewer */}
+      <div className="flex-1 bg-neutral-950 overflow-hidden">
+        {isImage && (
+          <div className="w-full h-full flex items-center justify-center p-8">
+            <img src={url} alt={file.fileName} className="max-w-full max-h-full object-contain rounded-2xl" />
+          </div>
+        )}
+
+        {isPdf && (
+          /* <object> uses the browser's built-in PDF renderer — works with Cloudinary fl_inline URLs */
+          <object
+            data={url}
+            type="application/pdf"
+            className="w-full h-full"
+          >
+            {/* Fallback if browser blocks object rendering */}
+            <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-8">
+              <span className="text-6xl">📄</span>
+              <p className="text-white font-bold text-lg">PDF preview not available in this browser</p>
+              <p className="text-neutral-400 text-sm">Click the button below to open or download the file.</p>
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl transition-colors"
+              >
+                <ExternalLink size={16} /> Open PDF
+              </a>
+            </div>
+          </object>
+        )}
+
+        {isDownloadOnly && (
+          <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-8">
+            <span className="text-7xl">📝</span>
+            <p className="text-white font-bold text-xl">{file.fileName}</p>
+            <p className="text-neutral-400">
+              <span className="uppercase font-bold text-amber-400">.{ext}</span> files cannot be previewed in the browser.
+            </p>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              download
+              className="flex items-center gap-2 px-8 py-3 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl transition-colors text-lg mt-2"
+            >
+              <Download size={20} /> Download to View
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 // ─── ADD / EDIT PRODUCT MODAL ─────────────────────────────────────────────────
 const ProductModal = ({ product, onClose, onSave }) => {
@@ -303,9 +402,36 @@ const AdminDashboard = () => {
   const [deleting, setDeleting] = useState(false);
   const [toast, setToast] = useState(null);
 
+  // Stats state
+  const [stats, setStats] = useState({ totalUsers: 0, totalProducts: 0, totalOrders: 0, pendingOrders: 0, totalRevenue: 0 });
+  const [statsLoading, setStatsLoading] = useState(false);
+
+  // Orders state
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
+
+  // Print Requests state
+  const [printRequests, setPrintRequests] = useState([]);
+  const [printLoading, setPrintLoading] = useState(false);
+  const [updatingPrintId, setUpdatingPrintId] = useState(null);
+  const [viewingFile, setViewingFile] = useState(null); // for file viewer modal
+
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const fetchStats = async () => {
+    setStatsLoading(true);
+    try {
+      const res = await api.get('/orders/admin/stats');
+      setStats(res.data.data || {});
+    } catch {
+      // silently fail — stats will just show 0
+    } finally {
+      setStatsLoading(false);
+    }
   };
 
   const fetchProducts = async () => {
@@ -320,8 +446,66 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchOrders = async () => {
+    setOrdersLoading(true);
+    try {
+      const res = await api.get('/orders/all/orders');
+      setOrders(res.data.data || []);
+    } catch {
+      showToast('Failed to load orders', 'error');
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    setUpdatingOrderId(orderId);
+    try {
+      await api.put(`/orders/${orderId}/status`, { status: newStatus });
+      showToast('Order status updated!');
+      fetchOrders();
+      fetchStats();
+    } catch {
+      showToast('Failed to update order status', 'error');
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  const fetchPrintRequests = async () => {
+    setPrintLoading(true);
+    try {
+      const res = await api.get('/print-request');
+      setPrintRequests(res.data.data || []);
+    } catch {
+      showToast('Failed to load print requests', 'error');
+    } finally {
+      setPrintLoading(false);
+    }
+  };
+
+  const handleUpdatePrintStatus = async (id, newStatus) => {
+    setUpdatingPrintId(id);
+    try {
+      await api.put(`/print-request/${id}/status`, { status: newStatus });
+      showToast('Print request status updated!');
+      fetchPrintRequests();
+    } catch {
+      showToast('Failed to update print status', 'error');
+    } finally {
+      setUpdatingPrintId(null);
+    }
+  };
+
+  // Fetch stats on mount
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
   useEffect(() => {
     if (activeTab === 'products') fetchProducts();
+    if (activeTab === 'orders') fetchOrders();
+    if (activeTab === 'prints') fetchPrintRequests();
   }, [activeTab]);
 
   if (loading) return <div className="min-h-screen bg-black flex items-center justify-center text-amber-500 font-bold">Loading...</div>;
@@ -348,19 +532,22 @@ const AdminDashboard = () => {
     }
   };
 
-  const stats = [
-    { title: "Total Products", value: products.length || '—', icon: <Package size={24} />, trend: "+4%", color: "amber" },
-    { title: "Total Users", value: "—", icon: <Users size={24} />, trend: "+12%", color: "blue" },
-    { title: "Active Orders", value: "—", icon: <ShoppingCart size={24} />, trend: "+25%", color: "green" },
-    { title: "Revenue", value: "—", icon: <Activity size={24} />, trend: "+18%", color: "purple" }
+  const statCards = [
+    { title: "Total Products", value: statsLoading ? '…' : (stats.totalProducts ?? 0), icon: <Package size={24} />, color: "amber" },
+    { title: "Total Users", value: statsLoading ? '…' : (stats.totalUsers ?? 0), icon: <Users size={24} />, color: "blue" },
+    { title: "Pending Orders", value: statsLoading ? '…' : (stats.pendingOrders ?? 0), icon: <ShoppingCart size={24} />, color: "green" },
+    { title: "Total Revenue", value: statsLoading ? '…' : `₹${(stats.totalRevenue ?? 0).toLocaleString()}`, icon: <Activity size={24} />, color: "purple" }
   ];
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
     { id: 'products', label: 'Products' },
+    { id: 'orders', label: 'Orders' },
+    { id: 'prints', label: 'Print Requests' },
   ];
 
   return (
+    <>
     <div className="min-h-screen bg-black pt-28 pb-20 px-4 sm:px-6 lg:px-8">
       {/* Modals */}
       {(modalOpen || editingProduct) && (
@@ -411,14 +598,20 @@ const AdminDashboard = () => {
         {activeTab === 'overview' && (
           <>
             {/* Stats Grid */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-neutral-500 text-sm">Dashboard statistics</p>
+              <button onClick={fetchStats} disabled={statsLoading} className="flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 transition-colors disabled:opacity-50">
+                <RefreshCw size={14} className={statsLoading ? 'animate-spin' : ''} />
+                Refresh
+              </button>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-              {stats.map((stat, i) => (
+              {statCards.map((stat, i) => (
                 <div key={i} className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 hover:border-amber-500/30 transition-colors group">
                   <div className="flex justify-between items-start mb-4">
                     <div className="p-3 bg-neutral-800 rounded-2xl text-amber-500 group-hover:bg-amber-500 group-hover:text-black transition-all">
                       {stat.icon}
                     </div>
-                    <span className="text-green-400 bg-green-500/10 px-2 py-1 rounded-lg text-sm font-bold">{stat.trend}</span>
                   </div>
                   <p className="text-neutral-400 text-sm font-bold mb-1">{stat.title}</p>
                   <h3 className="text-3xl font-bold text-white">{stat.value}</h3>
@@ -467,8 +660,169 @@ const AdminDashboard = () => {
             )}
           </div>
         )}
+
+        {/* ORDERS TAB */}
+        {activeTab === 'orders' && (
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white">All Orders <span className="text-neutral-500 font-normal text-base">({orders.length})</span></h3>
+              <button onClick={fetchOrders} disabled={ordersLoading} className="flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 transition-colors disabled:opacity-50">
+                <RefreshCw size={14} className={ordersLoading ? 'animate-spin' : ''} /> Refresh
+              </button>
+            </div>
+            {ordersLoading ? (
+              <div className="text-center py-16 text-amber-500">Loading orders...</div>
+            ) : orders.length === 0 ? (
+              <div className="text-center py-16 text-neutral-500">
+                <ShoppingCart size={48} className="mx-auto mb-4 opacity-30" />
+                <p>No orders yet.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-neutral-800 text-neutral-500 text-left">
+                      <th className="pb-4 pl-2 font-semibold">Order Info</th>
+                      <th className="pb-4 font-semibold">Customer</th>
+                      <th className="pb-4 font-semibold">Amount</th>
+                      <th className="pb-4 font-semibold">Status</th>
+                      <th className="pb-4 pr-2 font-semibold text-right">Update</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-800/50">
+                    {orders.map(order => (
+                      <tr key={order._id} className="hover:bg-neutral-800/40 transition-colors">
+                        <td className="py-4 pl-2">
+                          <p className="text-white font-mono text-xs">{order._id.slice(-8).toUpperCase()}</p>
+                          <p className="text-neutral-500 text-xs mt-0.5">{new Date(order.createdAt).toLocaleDateString()}</p>
+                        </td>
+                        <td className="py-4">
+                          <p className="text-white font-medium">{order.user?.name || 'Unknown'}</p>
+                          <p className="text-neutral-500 text-xs">{order.user?.email || ''}</p>
+                        </td>
+                        <td className="py-4">
+                          <span className="text-amber-400 font-bold">₹{order.totalPrice?.toLocaleString()}</span>
+                        </td>
+                        <td className="py-4">
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${
+                            order.orderStatus === 'delivered' ? 'bg-green-500/20 text-green-400' :
+                            order.orderStatus === 'cancelled' ? 'bg-red-500/20 text-red-400' :
+                            order.orderStatus === 'shipped' ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-amber-500/20 text-amber-400'
+                          }`}>{order.orderStatus || 'pending'}</span>
+                        </td>
+                        <td className="py-4 pr-2 text-right">
+                          <select
+                            disabled={updatingOrderId === order._id}
+                            value={order.orderStatus || 'pending'}
+                            onChange={e => handleUpdateOrderStatus(order._id, e.target.value)}
+                            className="bg-neutral-800 border border-neutral-700 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-amber-500 cursor-pointer disabled:opacity-50"
+                          >
+                            {['pending','confirmed','processing','shipped','delivered','cancelled'].map(s => (
+                              <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                            ))}
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* PRINT REQUESTS TAB */}
+        {activeTab === 'prints' && (
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white">Print Requests <span className="text-neutral-500 font-normal text-base">({printRequests.length})</span></h3>
+              <button onClick={fetchPrintRequests} disabled={printLoading} className="flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 transition-colors disabled:opacity-50">
+                <RefreshCw size={14} className={printLoading ? 'animate-spin' : ''} /> Refresh
+              </button>
+            </div>
+            {printLoading ? (
+              <div className="text-center py-16 text-amber-500">Loading print requests...</div>
+            ) : printRequests.length === 0 ? (
+              <div className="text-center py-16 text-neutral-500">
+                <Package size={48} className="mx-auto mb-4 opacity-30" />
+                <p>No print requests yet.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-neutral-800 text-neutral-500 text-left">
+                      <th className="pb-4 pl-2 font-semibold">Request</th>
+                      <th className="pb-4 font-semibold">Customer</th>
+                      <th className="pb-4 font-semibold">Print Options</th>
+                      <th className="pb-4 font-semibold">File</th>
+                      <th className="pb-4 font-semibold">Status</th>
+                      <th className="pb-4 pr-2 font-semibold text-right">Update</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-800/50">
+                    {printRequests.map(pr => (
+                      <tr key={pr._id} className="hover:bg-neutral-800/40 transition-colors">
+                        <td className="py-4 pl-2">
+                          <p className="text-white font-mono text-xs">{pr._id.slice(-8).toUpperCase()}</p>
+                          <p className="text-neutral-500 text-xs mt-0.5">{new Date(pr.createdAt).toLocaleDateString()}</p>
+                        </td>
+                        <td className="py-4">
+                          <p className="text-white font-medium">{pr.name}</p>
+                          <p className="text-neutral-500 text-xs">{pr.phone}</p>
+                        </td>
+                        <td className="py-4">
+                          <p className="text-neutral-300 text-xs capitalize">{pr.printType?.replace('-', ' ')} · {pr.copies} copies</p>
+                          <p className="text-neutral-500 text-xs">{pr.paperSize} · {pr.bindingType}</p>
+                          {pr.notes && <p className="text-neutral-500 text-xs italic mt-0.5 max-w-[150px] truncate">"{pr.notes}"</p>}
+                        </td>
+                        <td className="py-4">
+                          {pr.fileUrl ? (
+                            <button
+                              onClick={() => setViewingFile(pr)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold rounded-lg transition-colors"
+                            >
+                              📄 View File
+                            </button>
+                          ) : (
+                            <span className="text-neutral-600 text-xs">No file</span>
+                          )}
+                        </td>
+                        <td className="py-4">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize ${
+                            pr.status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                            pr.status === 'cancelled' ? 'bg-red-500/20 text-red-400' :
+                            pr.status === 'printing' ? 'bg-blue-500/20 text-blue-400' :
+                            pr.status === 'ready' ? 'bg-purple-500/20 text-purple-400' :
+                            'bg-amber-500/20 text-amber-400'
+                          }`}>{pr.status}</span>
+                        </td>
+                        <td className="py-4 pr-2 text-right">
+                          <select
+                            disabled={updatingPrintId === pr._id}
+                            value={pr.status}
+                            onChange={e => handleUpdatePrintStatus(pr._id, e.target.value)}
+                            className="bg-neutral-800 border border-neutral-700 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-amber-500 cursor-pointer disabled:opacity-50"
+                          >
+                            {['pending', 'reviewing', 'printing', 'ready', 'completed', 'cancelled'].map(s => (
+                              <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                            ))}
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
+    {/* File Viewer Modal */}
+    {viewingFile && <FileViewerModal file={viewingFile} onClose={() => setViewingFile(null)} />}
+    </>
   );
 };
 
