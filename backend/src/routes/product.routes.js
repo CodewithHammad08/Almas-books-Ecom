@@ -1,16 +1,18 @@
 import { Router } from "express";
 import { getProducts, getProductById, createProduct, updateProduct, deleteProduct } from "../controllers/product.controller.js";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { isAdmin } from "../middlewares/admin.middleware.js";
-import { upload } from "../middlewares/multer.middleware.js";
+import { verifyJWT, requireAdmin } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.route("/").get(getProducts)
-    .post(verifyJWT, isAdmin, upload.single("image"), createProduct);
+// / — GET public, POST admin-only
+router.route("/")
+    .get(getProducts)
+    .post(verifyJWT, requireAdmin, createProduct);
 
-router.route("/:id").get(getProductById)
-    .put(verifyJWT, isAdmin, upload.single("image"), updateProduct)
-    .delete(verifyJWT, isAdmin, deleteProduct);
+// /:id — GET public, PUT/DELETE admin-only
+router.route("/:id")
+    .get(getProductById)
+    .put(verifyJWT, requireAdmin, updateProduct)
+    .delete(verifyJWT, requireAdmin, deleteProduct);
 
 export default router;

@@ -28,7 +28,7 @@ const ProductSchema = new mongoose.Schema({
     category: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Category",
-        required: [true, "Category is required"]
+        default: null  // optional — not all products need a category
     },
     brand: {
         type: String,
@@ -70,16 +70,5 @@ const ProductSchema = new mongoose.Schema({
         ref: "Admin"
     }
 }, { timestamps: true });
-
-// Auto-generate slug from name
-ProductSchema.pre("save", function (next) {
-    if (this.isModified("name")) {
-        this.slug = this.name
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "");
-    }
-    next();
-});
 
 export const Product = mongoose.model("Product", ProductSchema);
