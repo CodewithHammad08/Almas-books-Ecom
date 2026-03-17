@@ -5,16 +5,6 @@ import path from "path";
 // Document types that must use resource_type "raw" on Cloudinary
 const RAW_EXTENSIONS = new Set([".pdf", ".doc", ".docx", ".xlsx", ".xls", ".ppt", ".pptx", ".txt", ".csv"]);
 
-/**
- * Inject fl_inline into a Cloudinary raw URL so the browser views the file
- * instead of downloading it. Transforms:
- *   .../raw/upload/v123/...  →  .../raw/upload/fl_inline/v123/...
- */
-const makeInlineUrl = (url) => {
-    if (!url) return url;
-    return url.replace(/\/upload\/(?!fl_inline)/, "/upload/fl_inline/");
-};
-
 const uploadOnCloudinary = async (localFilePath) => {
     if (!localFilePath) return null;
 
@@ -39,11 +29,12 @@ const uploadOnCloudinary = async (localFilePath) => {
         });
         cleanup();
 
-        // Return with inline-viewable secure URL
+        // Store the plain secure_url — no transformation flags injected
+        // (fl_inline is invalid for raw resources and breaks the URL)
         return {
             ...response,
-            secure_url: makeInlineUrl(response.secure_url),
-            url: makeInlineUrl(response.secure_url), // always https
+            secure_url: response.secure_url,
+            url: response.secure_url, // always https from Cloudinary
         };
 
     } catch (error) {
@@ -61,8 +52,8 @@ const uploadOnCloudinary = async (localFilePath) => {
                 cleanup();
                 return {
                     ...response,
-                    secure_url: makeInlineUrl(response.secure_url),
-                    url: makeInlineUrl(response.secure_url),
+                    secure_url: response.secure_url,
+                    url: response.secure_url,
                 };
             } catch (retryErr) {
                 console.error("❌ Cloudinary raw retry failed:", retryErr?.message || retryErr);

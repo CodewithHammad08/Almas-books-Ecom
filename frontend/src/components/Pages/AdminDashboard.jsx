@@ -1,24 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { Package, Users, ShoppingCart, Activity, X, Plus, Trash2, Pencil, ImageOff, ChevronDown, AlertCircle, CheckCircle, RefreshCw, ExternalLink, Download } from 'lucide-react';
+import { Package, Users, ShoppingCart, Activity, X, Plus, Trash2, Pencil, ImageOff, ChevronDown, AlertCircle, CheckCircle, RefreshCw, Download } from 'lucide-react';
 import api from '../../api/axios';
 
 
 // ─── FILE VIEWER MODAL ─────────────────────────────────────────────────────────
 const FileViewerModal = ({ file, onClose }) => {
   if (!file) return null;
-  // Always use https — ensure fl_inline is present for Cloudinary raw URLs
-  const rawUrl = (file.fileUrl || '').replace(/^http:\/\//, 'https://');
-  const url = rawUrl.includes('/upload/') && !rawUrl.includes('fl_inline')
-    ? rawUrl.replace('/upload/', '/upload/fl_inline/')
-    : rawUrl;
 
   const ext = (file.fileName || '').split('.').pop().toLowerCase();
   const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
   const isPdf = ext === 'pdf';
   // DOC, DOCX, etc. — browsers cannot render these natively; provide download
   const isDownloadOnly = !isImage && !isPdf;
+
+  // Always use HTTPS, and strip fl_inline if it was baked into the stored URL
+  // (fl_inline is invalid for Cloudinary raw resources and causes 404 errors)
+  const url = (file.fileUrl || '')
+    .replace(/^http:\/\//, 'https://')
+    .replace('/fl_inline/', '/');   // remove if previously stored with fl_inline
+
+  // Google Docs Viewer reliably renders cross-origin PDFs (no CORS issues)
+  const googleDocsUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
 
   return (
     <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col">
@@ -57,27 +61,14 @@ const FileViewerModal = ({ file, onClose }) => {
         )}
 
         {isPdf && (
-          /* <object> uses the browser's built-in PDF renderer — works with Cloudinary fl_inline URLs */
-          <object
-            data={url}
-            type="application/pdf"
-            className="w-full h-full"
-          >
-            {/* Fallback if browser blocks object rendering */}
-            <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-8">
-              <span className="text-6xl">📄</span>
-              <p className="text-white font-bold text-lg">PDF preview not available in this browser</p>
-              <p className="text-neutral-400 text-sm">Click the button below to open or download the file.</p>
-              <a
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl transition-colors"
-              >
-                <ExternalLink size={16} /> Open PDF
-              </a>
-            </div>
-          </object>
+          /* Google Docs Viewer renders cross-origin Cloudinary PDFs reliably —
+             avoids browser CORS/CSP restrictions that block <object> / <embed> */
+          <iframe
+            src={googleDocsUrl}
+            className="w-full h-full border-0"
+            title={file.fileName || 'PDF Viewer'}
+            allow="fullscreen"
+          />
         )}
 
         {isDownloadOnly && (
