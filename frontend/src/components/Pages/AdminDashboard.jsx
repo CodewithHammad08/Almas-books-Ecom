@@ -12,17 +12,19 @@ const FileViewerModal = ({ file, onClose }) => {
   const ext = (file.fileName || '').split('.').pop().toLowerCase();
   const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
   const isPdf = ext === 'pdf';
-  // DOC, DOCX, etc. — browsers cannot render these natively; provide download
   const isDownloadOnly = !isImage && !isPdf;
 
-  // Always use HTTPS, and strip fl_inline if it was baked into the stored URL
-  // (fl_inline is invalid for Cloudinary raw resources and causes 404 errors)
+  // Clean URL — always HTTPS, strip any fl_inline baked in from old uploads
   const url = (file.fileUrl || '')
     .replace(/^http:\/\//, 'https://')
-    .replace('/fl_inline/', '/');   // remove if previously stored with fl_inline
+    .replace('/fl_inline/', '/');
 
-  // Google Docs Viewer reliably renders cross-origin PDFs (no CORS issues)
-  const googleDocsUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+  // For PDFs: inject fl_inline ONLY into the iframe src so Cloudinary
+  // sends Content-Disposition: inline → browser renders it natively.
+  // The download button uses the clean url (without fl_inline).
+  const pdfInlineUrl = url.includes('/upload/')
+    ? url.replace('/upload/', '/upload/fl_inline/')
+    : url;
 
   return (
     <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col">
@@ -61,13 +63,13 @@ const FileViewerModal = ({ file, onClose }) => {
         )}
 
         {isPdf && (
-          /* Google Docs Viewer renders cross-origin Cloudinary PDFs reliably —
-             avoids browser CORS/CSP restrictions that block <object> / <embed> */
+          /* fl_inline in the src forces Cloudinary to send Content-Disposition: inline
+             so the browser's native PDF renderer (Chrome/Firefox/Edge) shows it inline.
+             Without it, Cloudinary sends attachment and the browser tries to download. */
           <iframe
-            src={googleDocsUrl}
+            src={pdfInlineUrl}
             className="w-full h-full border-0"
             title={file.fileName || 'PDF Viewer'}
-            allow="fullscreen"
           />
         )}
 
