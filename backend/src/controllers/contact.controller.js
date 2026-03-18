@@ -4,7 +4,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 const submitContact = asyncHandler(async (req, res) => {
-    const { firstName, lastName, email, phone, subject, message, rating } = req.body;
+    const { firstName, lastName, email, phone, subject, message } = req.body;
 
     if (!firstName || !lastName || !email || !message) {
         throw new ApiError(400, "Required fields are missing");
@@ -15,9 +15,8 @@ const submitContact = asyncHandler(async (req, res) => {
         lastName, 
         email, 
         phone: phone || "", 
-        subject: subject || "", 
-        message, 
-        rating: rating || 0
+        subject: subject || "General Inquiry", 
+        message
     });
 
     return res.status(201).json(
@@ -25,15 +24,4 @@ const submitContact = asyncHandler(async (req, res) => {
     );
 });
 
-const getTestimonials = asyncHandler(async (req, res) => {
-    // Fetch contacts with rating >= 4 to show on home page as testimonials
-    const testimonials = await Contact.find({ rating: { $gte: 4 }, showOnHome: true })
-        .sort({ createdAt: -1 })
-        .limit(6);
-
-    return res.status(200).json(
-        new ApiResponse(200, testimonials, "Testimonials fetched successfully")
-    );
-});
-
-export { submitContact, getTestimonials };
+export { submitContact };

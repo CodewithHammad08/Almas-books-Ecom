@@ -3,8 +3,8 @@ import { useState } from "react";
 import { Send, User, Mail, Phone, Type, MessageSquare, Star, CheckCircle } from 'lucide-react';
 import api from '../api/axios';
 
-
 const ContactForm = () => {
+  const [activeTab, setActiveTab] = useState('contact'); // 'contact' or 'review'
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -32,9 +32,27 @@ const ContactForm = () => {
     setIsSubmitting(true);
     setSuccessMsg('');
     setErrorMsg('');
+
+    if (activeTab === 'review' && formData.rating === 0) {
+        setErrorMsg("Please provide a rating out of 5 stars.");
+        setIsSubmitting(false);
+        return;
+    }
+
     try {
-        await api.post('/contact', formData);
-        setSuccessMsg("Thank you for your message! It has been sent successfully.");
+        const payload = { ...formData };
+        if (activeTab === 'contact') {
+            payload.rating = 0;
+            payload.subject = payload.subject || "General Inquiry";
+            await api.post('/contact', payload);
+            setSuccessMsg("Thank you for your message! It has been sent successfully.");
+        } else {
+            payload.phone = "";
+            payload.subject = "Customer Review";
+            await api.post('/testimonials', payload);
+            setSuccessMsg("Thank you for your review! It has been posted successfully.");
+        }
+        
         setFormData({
             firstName: "",
             lastName: "",
@@ -53,7 +71,28 @@ const ContactForm = () => {
 
   return (
     <div className="max-w-3xl h-full mx-auto bg-neutral-900 p-6 md:p-10 rounded-3xl shadow-xl border border-neutral-800">
-      <h2 className="text-3xl font-bold mb-8 text-center text-white">Send Us a Message</h2>
+      
+      {/* Tabs */}
+      <div className="flex bg-black rounded-xl p-1 mb-8 max-w-sm mx-auto">
+        <button
+          type="button"
+          onClick={() => { setActiveTab('contact'); setSuccessMsg(''); setErrorMsg(''); }}
+          className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all ${activeTab === 'contact' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-neutral-400 hover:text-white'}`}
+        >
+          Send Message
+        </button>
+        <button
+          type="button"
+          onClick={() => { setActiveTab('review'); setSuccessMsg(''); setErrorMsg(''); }}
+          className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all ${activeTab === 'review' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-neutral-400 hover:text-white'}`}
+        >
+          Leave Review
+        </button>
+      </div>
+
+      <h2 className="text-3xl font-bold mb-8 text-center text-white">
+        {activeTab === 'contact' ? 'Send Us a Message' : 'Share Your Experience'}
+      </h2>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* First + Last Name */}
@@ -66,6 +105,7 @@ const ContactForm = () => {
                 type="text"
                 name="firstName"
                 placeholder="John"
+                value={formData.firstName}
                 onChange={handleChange}
                 className="w-full pl-12 pr-4 py-3 bg-black border border-neutral-800 text-white rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all placeholder:text-neutral-600"
               />
@@ -80,6 +120,7 @@ const ContactForm = () => {
                 type="text"
                 name="lastName"
                 placeholder="Doe"
+                value={formData.lastName}
                 onChange={handleChange}
                 className="w-full pl-12 pr-4 py-3 bg-black border border-neutral-800 text-white rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all placeholder:text-neutral-600"
               />
@@ -87,7 +128,7 @@ const ContactForm = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className={`grid grid-cols-1 ${activeTab === 'contact' ? 'md:grid-cols-2' : ''} gap-6`}>
           {/* Email */}
           <div>
             <label className="text-sm font-bold text-neutral-400 mb-2 block">Email</label>
@@ -97,6 +138,7 @@ const ContactForm = () => {
                 type="email"
                 name="email"
                 placeholder="john@example.com"
+                value={formData.email}
                 onChange={handleChange}
                 className="w-full pl-12 pr-4 py-3 bg-black border border-neutral-800 text-white rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all placeholder:text-neutral-600"
               />
@@ -104,68 +146,79 @@ const ContactForm = () => {
           </div>
 
           {/* Phone */}
+          {activeTab === 'contact' && (
+            <div>
+              <label className="text-sm font-bold text-neutral-400 mb-2 block">Phone Number</label>
+              <div className="relative">
+                <Phone className="absolute left-4 top-3.5 text-neutral-500 h-5 w-5" />
+                <input
+                  type="tel"
+                  name="phone"
+                  placeholder="+91 98765 43210"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="w-full pl-12 pr-4 py-3 bg-black border border-neutral-800 text-white rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all placeholder:text-neutral-600"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Subject */}
+        {activeTab === 'contact' && (
           <div>
-            <label className="text-sm font-bold text-neutral-400 mb-2 block">Phone Number</label>
+            <label className="text-sm font-bold text-neutral-400 mb-2 block">Subject</label>
             <div className="relative">
-              <Phone className="absolute left-4 top-3.5 text-neutral-500 h-5 w-5" />
+              <Type className="absolute left-4 top-3.5 text-neutral-500 h-5 w-5" />
               <input
-                type="tel"
-                name="phone"
-                placeholder="+91 98765 43210"
+                type="text"
+                name="subject"
+                placeholder="How can we help?"
+                value={formData.subject}
                 onChange={handleChange}
                 className="w-full pl-12 pr-4 py-3 bg-black border border-neutral-800 text-white rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all placeholder:text-neutral-600"
               />
             </div>
           </div>
-        </div>
-
-        {/* Subject */}
-        <div>
-          <label className="text-sm font-bold text-neutral-400 mb-2 block">Subject</label>
-          <div className="relative">
-            <Type className="absolute left-4 top-3.5 text-neutral-500 h-5 w-5" />
-            <input
-              type="text"
-              name="subject"
-              placeholder="How can we help?"
-              onChange={handleChange}
-                className="w-full pl-12 pr-4 py-3 bg-black border border-neutral-800 text-white rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all placeholder:text-neutral-600"
-            />
-          </div>
-        </div>
+        )}
 
         {/* Rating System */}
-        <div>
-          <label className="text-sm font-bold text-neutral-400 mb-2 block">Rate Your Experience</label>
-          <div className="flex gap-2">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                type="button"
-                onClick={() => handleRating(star)}
-                className="focus:outline-none transition-transform hover:scale-110"
-              >
-                <Star
-                  className={`h-8 w-8 ${
-                    star <= formData.rating
-                      ? "fill-amber-500 text-amber-500"
-                      : "text-neutral-700 hover:text-amber-500"
-                  }`}
-                />
-              </button>
-            ))}
+        {activeTab === 'review' && (
+          <div>
+            <label className="text-sm font-bold text-neutral-400 mb-2 block">Rate Your Experience</label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => handleRating(star)}
+                  className="focus:outline-none transition-transform hover:scale-110"
+                >
+                  <Star
+                    className={`h-8 w-8 ${
+                      star <= formData.rating
+                        ? "fill-amber-500 text-amber-500"
+                        : "text-neutral-700 hover:text-amber-500"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Message */}
         <div>
-          <label className="text-sm font-bold text-neutral-400 mb-2 block">Message</label>
+          <label className="text-sm font-bold text-neutral-400 mb-2 block">
+            {activeTab === 'contact' ? 'Message' : 'Your Review'}
+          </label>
           <div className="relative">
           <MessageSquare className="absolute left-4 top-3.5 text-neutral-500 h-5 w-5" />
           <textarea
             name="message"
             rows="4"
-            placeholder="Tell us more about your inquiry..."
+            placeholder={activeTab === 'contact' ? "Tell us more about your inquiry..." : "Tell us what you loved..."}
+            value={formData.message}
             onChange={handleChange}
             className="w-full pl-12 pr-4 py-3 bg-black border border-neutral-800 text-white rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none resize-none transition-all placeholder:text-neutral-600"
           />
@@ -191,7 +244,7 @@ const ContactForm = () => {
           disabled={isSubmitting}
           className={`w-full ${isSubmitting ? 'bg-amber-500/50 cursor-not-allowed' : 'bg-amber-500 hover:bg-amber-600 hover:-translate-y-1 hover:shadow-amber-500/40'} text-black font-bold py-4 rounded-xl shadow-lg shadow-amber-500/20 transform transition-all flex items-center justify-center gap-3 text-lg`}
         >
-          <Send size={20} /> {isSubmitting ? "Sending..." : "Send Message"}
+          <Send size={20} /> {isSubmitting ? (activeTab === 'contact' ? "Sending..." : "Posting...") : (activeTab === 'contact' ? "Send Message" : "Post Review")}
         </button>
       </form>
     </div>

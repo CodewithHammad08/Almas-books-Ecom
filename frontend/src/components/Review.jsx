@@ -30,7 +30,7 @@ const Review = () => {
   useEffect(() => {
     const fetchTestimonials = async () => {
       try {
-        const res = await api.get('/contact/testimonials');
+        const res = await api.get('/testimonials');
         if (res.data?.data && res.data.data.length > 0) {
           const fetchedReviews = res.data.data.map(contact => ({
             name: `${contact.firstName} ${contact.lastName}`,

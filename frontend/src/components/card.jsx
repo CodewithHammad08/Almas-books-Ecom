@@ -18,7 +18,7 @@ const Card = ({ title, price, product }) => {
       addToCart({
         _id: product._id || product.id,
         name: title,
-        price: Number(numericPrice),
+        price: (discountPrice && discountPrice < Number(numericPrice)) ? discountPrice : Number(numericPrice),
         image: imageUrl,
       });
     }
@@ -70,10 +70,14 @@ const Card = ({ title, price, product }) => {
         <div className="mt-auto pt-2">
           <div itemProp="offers" itemScope itemType="https://schema.org/Offer" className="flex flex-wrap items-baseline gap-1 sm:gap-2 mb-3 sm:mb-4">
             <meta itemProp="priceCurrency" content="INR" />
-            <meta itemProp="price" content={numericPrice} />
-            <p className='font-bold text-amber-400 text-sm sm:text-xl'>{price}</p>
-            {discountPrice && discountPrice < Number(numericPrice) && (
-              <p className='text-neutral-500 text-[10px] sm:text-sm line-through'>₹{discountPrice}</p>
+            <meta itemProp="price" content={discountPrice && discountPrice < Number(numericPrice) ? discountPrice : numericPrice} />
+            {discountPrice && discountPrice < Number(numericPrice) ? (
+              <>
+                <p className='font-bold text-amber-400 text-sm sm:text-xl'>₹{discountPrice}</p>
+                <p className='text-neutral-500 text-[10px] sm:text-sm line-through'>{price}</p>
+              </>
+            ) : (
+              <p className='font-bold text-amber-400 text-sm sm:text-xl'>{price}</p>
             )}
           </div>
 

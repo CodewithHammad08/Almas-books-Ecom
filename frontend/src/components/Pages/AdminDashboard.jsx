@@ -245,8 +245,14 @@ const ProductTable = ({ products, onEdit, onDelete }) => {
               </td>
               <td className="py-4">
                 <div>
-                  <span className="text-amber-400 font-bold">₹{p.price}</span>
-                  {p.discountPrice && <span className="text-neutral-500 text-xs line-through ml-1">₹{p.discountPrice}</span>}
+                  {p.discountPrice && p.discountPrice < p.price ? (
+                    <>
+                      <span className="text-amber-400 font-bold">₹{p.discountPrice}</span>
+                      <span className="text-neutral-500 text-xs line-through ml-1">₹{p.price}</span>
+                    </>
+                  ) : (
+                    <span className="text-amber-400 font-bold">₹{p.price}</span>
+                  )}
                 </div>
               </td>
               <td className="py-4">

@@ -6,9 +6,7 @@ const contactSchema = new mongoose.Schema({
     email: { type: String, required: true },
     phone: { type: String, required: false },
     subject: { type: String, required: false },
-    message: { type: String, required: true },
-    rating: { type: Number, default: 0, min: 0, max: 5 },
-    showOnHome: { type: Boolean, default: true }
+    message: { type: String, required: true }
 }, { timestamps: true });
 
 export const Contact = mongoose.model("Contact", contactSchema);
