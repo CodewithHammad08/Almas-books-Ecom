@@ -4,13 +4,23 @@ import { BookOpen, Search, Package, SlidersHorizontal } from "lucide-react";
 import Card from "../card";
 import SEO from "../SEO";
 import api from '../../api/axios';
+import { useLocation } from 'react-router-dom';
 
 const ShoppingPage = () => {
+  const location = useLocation();
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const searchParam = params.get('search');
+    if (searchParam !== null) {
+      setSearchQuery(searchParam);
+    }
+  }, [location.search]);
 
   // Fetch products with category populated
   useEffect(() => {
@@ -75,23 +85,35 @@ const ShoppingPage = () => {
         </div>
 
         {/* Search and Filter Bar */}
-        <div className="sticky top-24 z-30 bg-black/90 backdrop-blur-xl border border-white/10 p-4 rounded-3xl mb-8 md:mb-12 shadow-2xl shadow-black/50">
-          <div className="flex flex-col lg:flex-row justify-between items-center gap-4">
+        <div className="sticky top-[70px] md:top-24 z-30 bg-black/95 md:bg-black/90 backdrop-blur-2xl border-b md:border border-white/10 md:rounded-3xl p-3 md:p-4 mb-6 md:mb-12 md:shadow-2xl md:shadow-black/50 -mx-4 md:mx-0 px-4 md:px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-3 md:gap-4">
+            
+            {/* Search Bar - Moves to Top on Mobile */}
+            <div className="relative w-full md:w-72 shrink-0 md:order-last">
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-neutral-900 border border-neutral-800 text-white rounded-2xl pl-10 pr-4 py-2.5 md:py-3 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none transition-all text-sm placeholder:text-neutral-500"
+              />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
+            </div>
 
             {/* Dynamic Categories from DB */}
-            <div className="flex flex-nowrap overflow-x-auto gap-2 w-full lg:w-auto pb-1 scrollbar-none">
+            <div className="flex flex-nowrap overflow-x-auto gap-2 w-full md:w-auto pb-1 scrollbar-none md:order-first items-center">
               {/* Always show "All" first */}
               <button
                 onClick={() => setActiveCategory('All')}
-                className={`shrink-0 flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-full border transition-all text-xs sm:text-sm font-medium whitespace-nowrap ${
+                className={`shrink-0 flex items-center gap-1.5 px-4 py-2 md:py-2.5 rounded-full border transition-all text-[13px] md:text-sm font-medium whitespace-nowrap ${
                   activeCategory === 'All'
-                    ? 'bg-amber-500 border-amber-500 text-black font-bold shadow-[0_0_15px_rgba(245,158,11,0.4)]'
-                    : 'bg-neutral-900/50 border-neutral-800 text-neutral-400 hover:border-amber-500/50 hover:text-white hover:bg-neutral-800'
+                    ? 'bg-amber-500 border-amber-500 text-black font-bold shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+                    : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-800'
                 }`}
               >
                 <BookOpen size={14} />
                 All
-                <span className="bg-black/20 text-current px-1.5 py-0.5 rounded-full text-[10px] font-bold">
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${activeCategory === 'All' ? 'bg-black/20' : 'bg-neutral-800'}`}>
                   {products.length}
                 </span>
               </button>
@@ -103,33 +125,24 @@ const ShoppingPage = () => {
                   <button
                     key={cat._id}
                     onClick={() => setActiveCategory(cat.name)}
-                    className={`shrink-0 flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 rounded-full border transition-all text-xs sm:text-sm font-medium whitespace-nowrap ${
+                    className={`shrink-0 flex items-center gap-1.5 px-4 py-2 md:py-2.5 rounded-full border transition-all text-[13px] md:text-sm font-medium whitespace-nowrap ${
                       activeCategory === cat.name
-                        ? 'bg-amber-500 border-amber-500 text-black font-bold shadow-[0_0_15px_rgba(245,158,11,0.4)]'
-                        : 'bg-neutral-900/50 border-neutral-800 text-neutral-400 hover:border-amber-500/50 hover:text-white hover:bg-neutral-800'
+                        ? 'bg-amber-500 border-amber-500 text-black font-bold shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+                        : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-800'
                     }`}
                   >
                     {cat.icon || <SlidersHorizontal size={14} />}
                     {cat.name}
                     {count > 0 && (
-                      <span className="bg-black/20 text-current px-1.5 py-0.5 rounded-full text-[10px] font-bold">{count}</span>
+                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${activeCategory === cat.name ? 'bg-black/20' : 'bg-neutral-800'}`}>
+                        {count}
+                      </span>
                     )}
                   </button>
                 );
               })}
             </div>
 
-            {/* Search Bar */}
-            <div className="relative w-full lg:w-72 shrink-0">
-              <input
-                type="text"
-                placeholder="Search products, brands, tags..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-neutral-900/50 border border-neutral-800 text-white rounded-full pl-5 pr-12 py-3 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none transition-all text-sm placeholder:text-neutral-600"
-              />
-              <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500" size={18} />
-            </div>
           </div>
         </div>
 
@@ -144,9 +157,9 @@ const ShoppingPage = () => {
 
         {/* Product Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-12">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 pb-12 w-full">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="w-full max-w-[320px] h-80 rounded-3xl bg-neutral-900 border border-neutral-800 animate-pulse" />
+              <div key={i} className="w-full aspect-[2/3] sm:h-80 rounded-2xl sm:rounded-3xl bg-neutral-900 border border-neutral-800 animate-pulse" />
             ))}
           </div>
         ) : filteredProducts.length === 0 ? (
@@ -161,7 +174,7 @@ const ShoppingPage = () => {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8 justify-items-center pb-12">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 pb-12 w-full">
             {filteredProducts.map((product) => (
               <Card
                 key={product._id}

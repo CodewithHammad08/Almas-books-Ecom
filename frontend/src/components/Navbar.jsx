@@ -12,6 +12,7 @@ const Navbar = () => {
   const { cartCount } = useCart();
   const navigate = useNavigate();
   const menuRef = useRef(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Load saved delivery address from localStorage
   const savedAddress = (() => { try { return JSON.parse(localStorage.getItem('savedAddress') || 'null'); } catch { return null; } })();
@@ -37,6 +38,15 @@ const Navbar = () => {
     await logout();
     setUserMenuOpen(false);
     navigate('/login');
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
+      setIsOpen(false);
+      setSearchQuery('');
+    }
   };
 
   return (
@@ -77,14 +87,18 @@ const Navbar = () => {
 
         {/* Desktop Search & Cart */}
         <div className="hidden md:flex items-center gap-4">
-            <div className="relative group">
+            <form onSubmit={handleSearchSubmit} className="relative group">
                 <input 
                     type="text" 
                     placeholder="Search..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     className="bg-neutral-900/50 border border-neutral-700 text-neutral-300 text-sm rounded-full pl-4 pr-10 py-2 w-48 focus:w-64 focus:border-amber-500 focus:bg-black focus:outline-none transition-all duration-300"
                 />
-                <Search className="absolute right-3 top-2.5 text-neutral-500 group-focus-within:text-amber-500 transition-colors" size={18} />
-            </div>
+                <button type="submit" className="absolute right-3 top-2.5 text-neutral-500 group-focus-within:text-amber-500 transition-colors">
+                    <Search size={18} />
+                </button>
+            </form>
 
             {/* User Icon / Dropdown */}
             <div className="relative" ref={menuRef}>
@@ -233,14 +247,18 @@ const Navbar = () => {
           </Link>
           
           {/* Mobile Search */}
-          <div className="relative mt-2">
+          <form onSubmit={handleSearchSubmit} className="relative mt-2">
             <input 
                 type="text" 
                 placeholder="Search products..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-neutral-900 border border-neutral-800 text-neutral-300 rounded-xl px-4 py-3 focus:border-amber-500 focus:outline-none transition-colors"
             />
-            <Search className="absolute right-4 top-3.5 text-neutral-500" size={20} />
-          </div>
+            <button type="submit" className="absolute right-4 top-3.5 text-neutral-500">
+                <Search size={20} />
+            </button>
+          </form>
         </div>
       </div>
     </nav>

@@ -3,6 +3,8 @@ import { ApiError } from "../utils/ApiError.js";
 import { PrintRequest } from "../models/printRequest.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import axios from "axios";
+import path from "path";
 
 const submitPrintRequest = asyncHandler(async (req, res) => {
     const { name, phone, copies, printType, notes, paperSize, bindingType } = req.body;
@@ -73,8 +75,63 @@ const updatePrintRequestStatus = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, printRequest, "Print request status updated successfully"));
 });
 
+/**
+ * Proxy the stored Cloudinary file through the backend.
+ * This avoids ALL browser CORS / Content-Disposition issues —
+ * the backend fetches the raw bytes and forwards them with the
+ * correct Content-Type and Content-Disposition: inline headers.
+ */
+const streamPrintFile = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const printRequest = await PrintRequest.findById(id);
+    if (!printRequest || !printRequest.fileUrl) {
+        throw new ApiError(404, "Print request or file not found");
+    }
+
+    const fileUrl = printRequest.fileUrl
+        .replace(/^http:\/\//, "https://")
+        .replace("/fl_inline/", "/");   // strip legacy flag — causes 401 on raw resources
+    const fileName = printRequest.fileName || "document";
+    const ext = path.extname(fileName).toLowerCase();
+
+    // Map common extensions to MIME types
+    const mimeMap = {
+        ".pdf":  "application/pdf",
+        ".jpg":  "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png":  "image/png",
+        ".gif":  "image/gif",
+        ".webp": "image/webp",
+        ".doc":  "application/msword",
+        ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ".xls":  "application/vnd.ms-excel",
+        ".ppt":  "application/vnd.ms-powerpoint",
+        ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        ".txt":  "text/plain",
+        ".csv":  "text/csv",
+    };
+    const contentType = mimeMap[ext] || "application/octet-stream";
+
+    // Fetch from Cloudinary via axios (follows redirects automatically)
+    console.log("📄 Fetching file URL:", fileUrl);
+    try {
+        const cloudinaryRes = await axios.get(fileUrl, { responseType: "stream" });
+        res.setHeader("Content-Type", contentType);
+        res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
+        res.setHeader("Cache-Control", "public, max-age=3600");
+        cloudinaryRes.data.pipe(res);
+    } catch (err) {
+        console.error("❌ File proxy error:", err?.message);
+        res.status(502).json({ message: "Could not load file from storage" });
+    }
+});
+
 export {
     submitPrintRequest,
     getAllPrintRequests,
-    updatePrintRequestStatus
+    updatePrintRequestStatus,
+    streamPrintFile,
 };
+

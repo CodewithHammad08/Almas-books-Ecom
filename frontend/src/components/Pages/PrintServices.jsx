@@ -1,7 +1,6 @@
 import React from 'react'
-import { Printer, IndianRupee, Check, FileText  } from 'lucide-react';
+import { Printer, IndianRupee, Check, FileText, Mail } from 'lucide-react';
 import { FaWhatsapp } from "react-icons/fa";
-import PrintForm from '../PrintForm';
 import SEO from '../SEO';
 
 const PrintServices = () => {
@@ -23,10 +22,16 @@ const PrintServices = () => {
         <h1 className='text-4xl md:text-6xl font-bold mt-8 text-center text-white'>Print & <span className="text-amber-500">Photocopy</span> Services</h1>
         <p className='text-lg md:text-xl font-medium text-center pt-4 text-neutral-400 max-w-2xl'>Fast, affordable, and high-quality printing services. Upload your documents or <br className="hidden md:block" />visit us in-store.</p>
         
-        <a href="https://wa.me/919833660690" target="_blank" rel="noopener noreferrer" className='mt-10 flex items-center gap-3 bg-green-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-green-500 transition-all shadow-lg shadow-green-900/20 hover:shadow-green-500/40 hover:-translate-y-1'>
-          <FaWhatsapp size={24} />
-          Send via WhatsApp
-        </a>
+        <div className='mt-10 flex flex-col sm:flex-row items-center gap-4'>
+          <a href="https://wa.me/919833660690" target="_blank" rel="noopener noreferrer" className='flex items-center justify-center gap-3 bg-green-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-green-500 transition-all shadow-lg shadow-green-900/20 hover:shadow-green-500/40 hover:-translate-y-1 w-full sm:w-auto'>
+            <FaWhatsapp size={24} />
+            Send via WhatsApp
+          </a>
+          <a href="mailto:zubair36@gmail.com?subject=Print Request" target="_blank" rel="noopener noreferrer" className='flex items-center justify-center gap-3 bg-amber-500 text-black px-8 py-4 rounded-full font-bold text-lg hover:bg-amber-400 transition-all shadow-lg shadow-amber-900/20 hover:shadow-amber-500/40 hover:-translate-y-1 w-full sm:w-auto'>
+            <Mail size={24} />
+            Send via Email
+          </a>
+        </div>
         </div>
 
 {/* Rate Card */}
@@ -62,10 +67,38 @@ const PrintServices = () => {
             </div>
         </div>
         </div>
-        {/* Print form */}
-<div className='mt-20 relative z-10'>
-      <PrintForm />
-</div>
+        {/* WhatsApp Contact Section
+        <div className='mt-20 relative z-10 flex justify-center px-4'>
+          <div className='max-w-3xl w-full bg-neutral-900 border border-green-500/30 rounded-3xl p-8 md:p-12 text-center shadow-[0_0_40px_rgba(34,197,94,0.1)]'>
+            <div className='w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6'>
+              <FaWhatsapp size={40} className='text-green-500' />
+            </div>
+            <h2 className='text-3xl md:text-4xl font-bold text-white mb-4'>Print via WhatsApp</h2>
+            <p className='text-lg text-neutral-400 mb-8'>
+              We've simplified our printing process! Just send us your documents directly on WhatsApp. Let us know your requirements (Color/B&W, Copies, Binding, etc.) and we'll get it ready for you in no time.
+            </p>
+            <div className='flex flex-col sm:flex-row items-center justify-center gap-4'>
+              <a 
+                href="https://wa.me/919833660690?text=Hi, I would like to print some documents. Here are my requirements:%0A%0A- Print Type (B&W/Color): %0A- Copies: %0A- Paper Size: A4%0A- Binding: " 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className='inline-flex items-center justify-center gap-3 bg-green-600 hover:bg-green-500 text-white font-bold px-8 py-4 rounded-full text-xl transition-all shadow-lg shadow-green-900/20 hover:shadow-green-500/40 hover:-translate-y-1 w-full sm:w-auto'
+              >
+                <FaWhatsapp size={28} />
+                WhatsApp
+              </a>
+              <a 
+                href="mailto:zubair36@gmail.com?subject=Print Request&body=Hi, I would like to print some documents. Here are my requirements:%0A%0A- Print Type (B&W/Color): %0A- Copies: %0A- Paper Size: A4%0A- Binding: " 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className='inline-flex items-center justify-center gap-3 bg-amber-500 hover:bg-amber-400 text-black font-bold px-8 py-4 rounded-full text-xl transition-all shadow-lg shadow-amber-900/20 hover:shadow-amber-500/40 hover:-translate-y-1 w-full sm:w-auto'
+              >
+                <Mail size={28} />
+                Email
+              </a>
+            </div>
+          </div>
+        </div> */}
 
 {/* End part */}
 <div className='grid grid-cols-1 md:grid-cols-3 gap-8 px-4 w-full max-w-6xl mx-auto mt-20 mb-10 relative z-10'>

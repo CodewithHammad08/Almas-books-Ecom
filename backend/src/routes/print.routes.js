@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { submitPrintRequest, getAllPrintRequests, updatePrintRequestStatus } from "../controllers/print.controller.js";
+import { submitPrintRequest, getAllPrintRequests, updatePrintRequestStatus, streamPrintFile } from "../controllers/print.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { isAdmin } from "../middlewares/admin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -25,4 +25,8 @@ router.route("/")
 
 router.route("/:id/status").put(verifyJWT, isAdmin, updatePrintRequestStatus);
 
+// Proxy route — streams the file through backend with correct Content-Type headers
+router.route("/:id/file").get(verifyJWT, isAdmin, streamPrintFile);
+
 export default router;
+

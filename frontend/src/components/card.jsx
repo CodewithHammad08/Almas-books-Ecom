@@ -25,9 +25,9 @@ const Card = ({ title, price, product }) => {
   };
 
   return (
-    <article itemScope itemType="https://schema.org/Product" className='group relative w-full max-w-[320px] rounded-3xl overflow-hidden border border-neutral-800 bg-neutral-900 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-amber-500/10 hover:border-amber-500/50 cursor-pointer'>
+    <article itemScope itemType="https://schema.org/Product" className='group relative w-full h-full flex flex-col rounded-2xl md:rounded-3xl overflow-hidden border border-neutral-800 bg-neutral-900 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-500/10 hover:border-amber-500/50 cursor-pointer'>
       {/* Image Section */}
-      <div className='h-56 w-full relative overflow-hidden'>
+      <div className='h-40 sm:h-56 w-full relative overflow-hidden shrink-0'>
         <img
           src={imageUrl}
           alt={title}
@@ -38,14 +38,14 @@ const Card = ({ title, price, product }) => {
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
         {/* Stock / category badges */}
-        <div className="absolute top-3 left-3 flex gap-2">
+        <div className="absolute top-2 left-2 flex gap-1.5 flex-wrap">
           {isOutOfStock && (
-            <span className="flex items-center gap-1 text-[10px] font-bold bg-red-500 text-white px-2 py-1 rounded-full">
-              <PackageX size={10} /> Out of Stock
+            <span className="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold bg-red-500 text-white px-2 py-0.5 sm:py-1 rounded-full">
+              <PackageX size={10} /> <span className="hidden sm:inline">Out of Stock</span><span className="sm:hidden">OOS</span>
             </span>
           )}
           {product?.category?.name && (
-            <span className="text-[10px] font-bold bg-black/60 text-amber-400 px-2 py-1 rounded-full backdrop-blur-sm border border-amber-500/20">
+            <span className="text-[9px] sm:text-[10px] font-bold bg-black/60 text-amber-400 px-2 py-0.5 sm:py-1 rounded-full backdrop-blur-sm border border-amber-500/20 line-clamp-1 max-w-[80px] sm:max-w-none">
               {product.category.name}
             </span>
           )}
@@ -53,38 +53,41 @@ const Card = ({ title, price, product }) => {
 
         {/* Discount badge */}
         {discountPrice && discountPrice < Number(numericPrice) && (
-          <span className="absolute top-3 right-3 text-[10px] font-bold bg-amber-500 text-black px-2 py-1 rounded-full">
+          <span className="absolute top-2 right-2 text-[9px] sm:text-[10px] font-bold bg-amber-500 text-black px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full">
             SALE
           </span>
         )}
       </div>
 
       {/* Content */}
-      <div className='p-5'>
-        <h3 itemProp="name" className='font-bold text-base text-white mb-1 line-clamp-1'>{title}</h3>
+      <div className='p-3 sm:p-5 flex flex-col flex-1'>
+        <h3 itemProp="name" className='font-bold text-[13px] sm:text-base text-white mb-1 leading-tight line-clamp-2 min-h-[2.5rem] sm:min-h-0'>{title}</h3>
 
         {product?.brand && (
-          <p className="text-neutral-500 text-xs mb-2">{product.brand}</p>
+          <p className="text-neutral-500 text-[10px] sm:text-xs mb-2 line-clamp-1">{product.brand}</p>
         )}
 
-        <div itemProp="offers" itemScope itemType="https://schema.org/Offer" className="flex items-baseline gap-2 mb-4">
-          <meta itemProp="priceCurrency" content="INR" />
-          <meta itemProp="price" content={numericPrice} />
-          <p className='font-bold text-amber-400 text-xl'>{price}</p>
-          {discountPrice && discountPrice < Number(numericPrice) && (
-            <p className='text-neutral-500 text-sm line-through'>₹{discountPrice}</p>
-          )}
-        </div>
+        <div className="mt-auto pt-2">
+          <div itemProp="offers" itemScope itemType="https://schema.org/Offer" className="flex flex-wrap items-baseline gap-1 sm:gap-2 mb-3 sm:mb-4">
+            <meta itemProp="priceCurrency" content="INR" />
+            <meta itemProp="price" content={numericPrice} />
+            <p className='font-bold text-amber-400 text-sm sm:text-xl'>{price}</p>
+            {discountPrice && discountPrice < Number(numericPrice) && (
+              <p className='text-neutral-500 text-[10px] sm:text-sm line-through'>₹{discountPrice}</p>
+            )}
+          </div>
 
-        <button
-          onClick={handleAddToCart}
-          disabled={isOutOfStock}
-          aria-label={`Add ${title} to cart`}
-          className='w-full flex items-center justify-center gap-2 bg-amber-400 hover:bg-amber-500 text-black font-bold py-2.5 rounded-xl transition-colors duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-400'
-        >
-          <ShoppingCart size={18} strokeWidth={2.5} />
-          {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
-        </button>
+          <button
+            onClick={handleAddToCart}
+            disabled={isOutOfStock}
+            aria-label={`Add ${title} to cart`}
+            className='w-full flex items-center justify-center gap-1.5 sm:gap-2 bg-amber-400 hover:bg-amber-500 text-black font-bold py-2 sm:py-2.5 rounded-lg sm:rounded-xl transition-colors duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-400 text-xs sm:text-sm'
+          >
+            <ShoppingCart size={16} className="sm:w-[18px] sm:h-[18px]" strokeWidth={2.5} />
+            <span className="hidden sm:inline">{isOutOfStock ? 'Out of Stock' : 'Add to Cart'}</span>
+            <span className="sm:hidden">{isOutOfStock ? 'OOS' : 'Add'}</span>
+          </button>
+        </div>
       </div>
     </article>
   )

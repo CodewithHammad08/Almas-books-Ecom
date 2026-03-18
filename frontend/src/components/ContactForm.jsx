@@ -1,6 +1,7 @@
 import React from 'react'
 import { useState } from "react";
-import { Send, User, Mail, Phone, Type, MessageSquare, Star } from 'lucide-react';
+import { Send, User, Mail, Phone, Type, MessageSquare, Star, CheckCircle } from 'lucide-react';
+import api from '../api/axios';
 
 
 const ContactForm = () => {
@@ -14,6 +15,10 @@ const ContactForm = () => {
     rating: 0,
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -22,9 +27,28 @@ const ContactForm = () => {
     setFormData({ ...formData, rating: score });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(formData); // later send to backend
+    setIsSubmitting(true);
+    setSuccessMsg('');
+    setErrorMsg('');
+    try {
+        await api.post('/contact', formData);
+        setSuccessMsg("Thank you for your message! It has been sent successfully.");
+        setFormData({
+            firstName: "",
+            lastName: "",
+            email: "",
+            phone: "",
+            subject: "",
+            message: "",
+            rating: 0,
+        });
+    } catch (error) {
+        setErrorMsg(error.response?.data?.message || "Something went wrong. Please try again.");
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   return (
@@ -148,12 +172,26 @@ const ContactForm = () => {
           </div>
         </div>
 
+        {/* Success / Error Messages */}
+        {successMsg && (
+            <div className="bg-green-500/20 border border-green-500/50 text-green-400 px-4 py-4 rounded-xl flex items-center gap-3">
+                <CheckCircle size={24} />
+                <p className="font-medium">{successMsg}</p>
+            </div>
+        )}
+        {errorMsg && (
+            <div className="bg-red-500/20 border border-red-500/50 text-red-400 px-4 py-4 rounded-xl">
+                <p className="font-medium">{errorMsg}</p>
+            </div>
+        )}
+
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold py-4 rounded-xl shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transform hover:-translate-y-1 transition-all flex items-center justify-center gap-3 text-lg"
+          disabled={isSubmitting}
+          className={`w-full ${isSubmitting ? 'bg-amber-500/50 cursor-not-allowed' : 'bg-amber-500 hover:bg-amber-600 hover:-translate-y-1 hover:shadow-amber-500/40'} text-black font-bold py-4 rounded-xl shadow-lg shadow-amber-500/20 transform transition-all flex items-center justify-center gap-3 text-lg`}
         >
-          <Send size={20} /> Send Message
+          <Send size={20} /> {isSubmitting ? "Sending..." : "Send Message"}
         </button>
       </form>
     </div>

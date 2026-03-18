@@ -5,96 +5,7 @@ import { Package, Users, ShoppingCart, Activity, X, Plus, Trash2, Pencil, ImageO
 import api from '../../api/axios';
 
 
-// ─── FILE VIEWER MODAL ─────────────────────────────────────────────────────────
-const FileViewerModal = ({ file, onClose }) => {
-  if (!file) return null;
 
-  const ext = (file.fileName || '').split('.').pop().toLowerCase();
-  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
-  const isPdf = ext === 'pdf';
-  const isDownloadOnly = !isImage && !isPdf;
-
-  // Clean URL — always HTTPS, strip any fl_inline baked in from old uploads
-  const url = (file.fileUrl || '')
-    .replace(/^http:\/\//, 'https://')
-    .replace('/fl_inline/', '/');
-
-  // For PDFs: inject fl_inline ONLY into the iframe src so Cloudinary
-  // sends Content-Disposition: inline → browser renders it natively.
-  // The download button uses the clean url (without fl_inline).
-  const pdfInlineUrl = url.includes('/upload/')
-    ? url.replace('/upload/', '/upload/fl_inline/')
-    : url;
-
-  return (
-    <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 bg-neutral-900 border-b border-neutral-800 shrink-0">
-        <div className="flex items-center gap-3">
-          <span className="text-xl">{isImage ? '🖼️' : '📄'}</span>
-          <div>
-            <p className="text-white font-bold text-sm truncate max-w-sm">{file.fileName || 'Document'}</p>
-            <p className="text-neutral-500 text-xs capitalize">
-              {file.name} · {file.printType?.replace('-', ' ')} · {file.copies} copies
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black text-xs font-bold rounded-xl transition-colors"
-          >
-            <Download size={14} /> Download File
-          </a>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors ml-1">
-            <X size={20} />
-          </button>
-        </div>
-      </div>
-
-      {/* Viewer */}
-      <div className="flex-1 bg-neutral-950 overflow-hidden">
-        {isImage && (
-          <div className="w-full h-full flex items-center justify-center p-8">
-            <img src={url} alt={file.fileName} className="max-w-full max-h-full object-contain rounded-2xl" />
-          </div>
-        )}
-
-        {isPdf && (
-          /* fl_inline in the src forces Cloudinary to send Content-Disposition: inline
-             so the browser's native PDF renderer (Chrome/Firefox/Edge) shows it inline.
-             Without it, Cloudinary sends attachment and the browser tries to download. */
-          <iframe
-            src={pdfInlineUrl}
-            className="w-full h-full border-0"
-            title={file.fileName || 'PDF Viewer'}
-          />
-        )}
-
-        {isDownloadOnly && (
-          <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-8">
-            <span className="text-7xl">📝</span>
-            <p className="text-white font-bold text-xl">{file.fileName}</p>
-            <p className="text-neutral-400">
-              <span className="uppercase font-bold text-amber-400">.{ext}</span> files cannot be previewed in the browser.
-            </p>
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              download
-              className="flex items-center gap-2 px-8 py-3 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl transition-colors text-lg mt-2"
-            >
-              <Download size={20} /> Download to View
-            </a>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
 
 // ─── ADD / EDIT PRODUCT MODAL ─────────────────────────────────────────────────
 const ProductModal = ({ product, onClose, onSave }) => {
@@ -404,11 +315,7 @@ const AdminDashboard = () => {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
 
-  // Print Requests state
-  const [printRequests, setPrintRequests] = useState([]);
-  const [printLoading, setPrintLoading] = useState(false);
-  const [updatingPrintId, setUpdatingPrintId] = useState(null);
-  const [viewingFile, setViewingFile] = useState(null); // for file viewer modal
+
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -465,30 +372,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchPrintRequests = async () => {
-    setPrintLoading(true);
-    try {
-      const res = await api.get('/print-request');
-      setPrintRequests(res.data.data || []);
-    } catch {
-      showToast('Failed to load print requests', 'error');
-    } finally {
-      setPrintLoading(false);
-    }
-  };
 
-  const handleUpdatePrintStatus = async (id, newStatus) => {
-    setUpdatingPrintId(id);
-    try {
-      await api.put(`/print-request/${id}/status`, { status: newStatus });
-      showToast('Print request status updated!');
-      fetchPrintRequests();
-    } catch {
-      showToast('Failed to update print status', 'error');
-    } finally {
-      setUpdatingPrintId(null);
-    }
-  };
 
   // Fetch stats on mount
   useEffect(() => {
@@ -498,7 +382,6 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (activeTab === 'products') fetchProducts();
     if (activeTab === 'orders') fetchOrders();
-    if (activeTab === 'prints') fetchPrintRequests();
   }, [activeTab]);
 
   if (loading) return <div className="min-h-screen bg-black flex items-center justify-center text-amber-500 font-bold">Loading...</div>;
@@ -536,12 +419,11 @@ const AdminDashboard = () => {
     { id: 'overview', label: 'Overview' },
     { id: 'products', label: 'Products' },
     { id: 'orders', label: 'Orders' },
-    { id: 'prints', label: 'Print Requests' },
   ];
 
   return (
     <>
-    <div className="min-h-screen bg-black pt-28 pb-20 px-4 sm:px-6 lg:px-8">
+     <div className="min-h-screen bg-black pt-28 pb-20 px-4 sm:px-6 lg:px-8">
       {/* Modals */}
       {(modalOpen || editingProduct) && (
         <ProductModal
@@ -725,96 +607,8 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {/* PRINT REQUESTS TAB */}
-        {activeTab === 'prints' && (
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-8">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-white">Print Requests <span className="text-neutral-500 font-normal text-base">({printRequests.length})</span></h3>
-              <button onClick={fetchPrintRequests} disabled={printLoading} className="flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 transition-colors disabled:opacity-50">
-                <RefreshCw size={14} className={printLoading ? 'animate-spin' : ''} /> Refresh
-              </button>
-            </div>
-            {printLoading ? (
-              <div className="text-center py-16 text-amber-500">Loading print requests...</div>
-            ) : printRequests.length === 0 ? (
-              <div className="text-center py-16 text-neutral-500">
-                <Package size={48} className="mx-auto mb-4 opacity-30" />
-                <p>No print requests yet.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-neutral-800 text-neutral-500 text-left">
-                      <th className="pb-4 pl-2 font-semibold">Request</th>
-                      <th className="pb-4 font-semibold">Customer</th>
-                      <th className="pb-4 font-semibold">Print Options</th>
-                      <th className="pb-4 font-semibold">File</th>
-                      <th className="pb-4 font-semibold">Status</th>
-                      <th className="pb-4 pr-2 font-semibold text-right">Update</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-800/50">
-                    {printRequests.map(pr => (
-                      <tr key={pr._id} className="hover:bg-neutral-800/40 transition-colors">
-                        <td className="py-4 pl-2">
-                          <p className="text-white font-mono text-xs">{pr._id.slice(-8).toUpperCase()}</p>
-                          <p className="text-neutral-500 text-xs mt-0.5">{new Date(pr.createdAt).toLocaleDateString()}</p>
-                        </td>
-                        <td className="py-4">
-                          <p className="text-white font-medium">{pr.name}</p>
-                          <p className="text-neutral-500 text-xs">{pr.phone}</p>
-                        </td>
-                        <td className="py-4">
-                          <p className="text-neutral-300 text-xs capitalize">{pr.printType?.replace('-', ' ')} · {pr.copies} copies</p>
-                          <p className="text-neutral-500 text-xs">{pr.paperSize} · {pr.bindingType}</p>
-                          {pr.notes && <p className="text-neutral-500 text-xs italic mt-0.5 max-w-[150px] truncate">"{pr.notes}"</p>}
-                        </td>
-                        <td className="py-4">
-                          {pr.fileUrl ? (
-                            <button
-                              onClick={() => setViewingFile(pr)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold rounded-lg transition-colors"
-                            >
-                              📄 View File
-                            </button>
-                          ) : (
-                            <span className="text-neutral-600 text-xs">No file</span>
-                          )}
-                        </td>
-                        <td className="py-4">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize ${
-                            pr.status === 'completed' ? 'bg-green-500/20 text-green-400' :
-                            pr.status === 'cancelled' ? 'bg-red-500/20 text-red-400' :
-                            pr.status === 'printing' ? 'bg-blue-500/20 text-blue-400' :
-                            pr.status === 'ready' ? 'bg-purple-500/20 text-purple-400' :
-                            'bg-amber-500/20 text-amber-400'
-                          }`}>{pr.status}</span>
-                        </td>
-                        <td className="py-4 pr-2 text-right">
-                          <select
-                            disabled={updatingPrintId === pr._id}
-                            value={pr.status}
-                            onChange={e => handleUpdatePrintStatus(pr._id, e.target.value)}
-                            className="bg-neutral-800 border border-neutral-700 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-amber-500 cursor-pointer disabled:opacity-50"
-                          >
-                            {['pending', 'reviewing', 'printing', 'ready', 'completed', 'cancelled'].map(s => (
-                              <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-                            ))}
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </div>
-    {/* File Viewer Modal */}
-    {viewingFile && <FileViewerModal file={viewingFile} onClose={() => setViewingFile(null)} />}
     </>
   );
 };

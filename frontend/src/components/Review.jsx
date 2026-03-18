@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Star, Quote } from 'lucide-react';
+import api from '../api/axios';
 
-const reviews = [
+const defaultReviews = [
   {
     name: "Sarah Johnson",
     role: "Teacher",
@@ -23,6 +24,31 @@ const reviews = [
 ];
 
 const Review = () => {
+  const [reviews, setReviews] = useState(defaultReviews);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      try {
+        const res = await api.get('/contact/testimonials');
+        if (res.data?.data && res.data.data.length > 0) {
+          const fetchedReviews = res.data.data.map(contact => ({
+            name: `${contact.firstName} ${contact.lastName}`,
+            role: contact.subject || "Customer",
+            text: contact.message,
+            stars: contact.rating || 5
+          }));
+          setReviews(fetchedReviews);
+        }
+      } catch (error) {
+        console.error("Failed to fetch testimonials", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTestimonials();
+  }, []);
+
   return (
     <div className='bg-black w-full py-24 border-t border-neutral-900'>
       <div className="max-w-7xl mx-auto px-4">
