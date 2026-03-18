@@ -6,13 +6,13 @@ import { BookOpen,
 
 const Category = () => {
   return (
-    <div className='w-full h-auto py-20 bg-black'>
+    <div className='w-full h-auto py-12 md:py-20 bg-black'>
       <div className="max-w-7xl mx-auto px-4">
-        <h2 className='text-white text-center text-3xl md:text-5xl font-bold mb-4'>Shop By Category</h2>
-        <p className='text-neutral-400 text-center text-lg md:text-xl font-medium mb-12'>Find exactly what you need for work, school, or art.</p>
+        <h2 className='text-white text-center text-3xl md:text-5xl font-bold mb-3 md:mb-4'>Shop By Category</h2>
+        <p className='text-neutral-400 text-center text-base md:text-xl font-medium mb-8 md:mb-12'>Find exactly what you need for work, school, or art.</p>
 
         {/* Cards */}
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6'>
           
           {/* Card 1 */}
           <div className='group relative bg-neutral-900 rounded-3xl p-6 border border-neutral-800 hover:border-amber-500 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-amber-500/10 cursor-pointer'>

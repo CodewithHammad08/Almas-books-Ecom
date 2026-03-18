@@ -5,9 +5,9 @@ import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
-    <footer className="w-full bg-black border-t border-neutral-900 pt-20 pb-8">
+    <footer className="w-full bg-black border-t border-neutral-900 pt-12 md:pt-20 pb-6 md:pb-8">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 mb-10 md:mb-16">
           
           {/* Brand Section */}
           <div className="space-y-6">

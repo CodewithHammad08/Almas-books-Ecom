@@ -27,16 +27,16 @@ const ProductListing = () => {
   }, []);
 
   return (
-    <div className='w-full h-auto py-20 bg-black'>
+    <div className='w-full h-auto py-12 md:py-20 bg-black'>
       <div className="max-w-7xl mx-auto px-4">
-        <h2 className='text-white text-center text-3xl md:text-5xl font-bold mb-4'>Featured Products</h2>
-        <p className='text-neutral-400 text-center text-lg md:text-xl font-medium mb-12'>Popular items this month</p>
+        <h2 className='text-white text-center text-3xl md:text-5xl font-bold mb-3 md:mb-4'>Featured Products</h2>
+        <p className='text-neutral-400 text-center text-base md:text-xl font-medium mb-8 md:mb-12'>Popular items this month</p>
         
         {/* Cards */}
         {loading ? (
           <div className="text-amber-500 text-center py-10">Loading products...</div>
         ) : (
-          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-center'>
+          <div className='grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 md:gap-8 justify-items-center'>
             {products.map((product) => (
               <Card 
                 key={product._id || product.id} 
@@ -48,10 +48,10 @@ const ProductListing = () => {
           </div>
         )}
 
-        <div className="mt-16 flex justify-center">
-          <Link to="/shop" className="group bg-amber-400 px-8 py-4 flex items-center gap-3 text-black rounded-full font-bold text-xl hover:bg-amber-500 transition-all duration-300 hover:shadow-[0_0_20px_rgba(251,191,36,0.4)]">
+        <div className="mt-10 md:mt-16 flex justify-center">
+          <Link to="/shop" className="group bg-amber-400 px-6 py-3 md:px-8 md:py-4 flex items-center gap-3 text-black rounded-full font-bold text-base md:text-xl hover:bg-amber-500 transition-all duration-300 hover:shadow-[0_0_20px_rgba(251,191,36,0.4)]">
             View All Products
-            <ArrowRight className="group-hover:translate-x-1 transition-transform" size={24} strokeWidth={2.5}/>
+            <ArrowRight className="group-hover:translate-x-1 transition-transform" size={20} md:size={24} strokeWidth={2.5}/>
           </Link>
         </div>
       </div>

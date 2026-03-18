@@ -50,31 +50,31 @@ const Review = () => {
   }, []);
 
   return (
-    <div className='bg-black w-full py-24 border-t border-neutral-900'>
+    <div className='bg-black w-full py-16 md:py-24 border-t border-neutral-900'>
       <div className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-16">
-            <h2 className='text-white text-3xl md:text-5xl font-bold mb-4'>What Our Customers Say</h2>
-            <p className='text-neutral-400 text-lg md:text-xl font-medium'>Trusted by students and professionals</p>
+        <div className="text-center mb-12 md:mb-16">
+            <h2 className='text-white text-2xl md:text-5xl font-bold mb-3 md:mb-4'>What Our Customers Say</h2>
+            <p className='text-neutral-400 text-base md:text-xl font-medium'>Trusted by students and professionals</p>
         </div>
 
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-8'>
+        <div className='grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8'>
           {reviews.map((review, index) => (
-             <div key={index} className='group relative bg-neutral-900 rounded-3xl p-8 border border-neutral-800 hover:border-amber-500/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-lg hover:shadow-black/50'>
-                <div className="absolute -top-6 left-8 bg-neutral-800 p-3 rounded-2xl group-hover:bg-amber-500 transition-colors duration-300">
+             <div key={index} className='group relative bg-neutral-900 rounded-3xl p-6 md:p-8 border border-neutral-800 hover:border-amber-500/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-lg hover:shadow-black/50'>
+                <div className="absolute -top-5 left-6 md:-top-6 md:left-8 bg-neutral-800 p-2.5 md:p-3 rounded-2xl group-hover:bg-amber-500 transition-colors duration-300">
                   <Quote className="text-amber-500 group-hover:text-black transition-colors duration-300" size={24} fill="currentColor" />
                 </div>
                 
-                <div className="flex gap-1 mb-6 mt-4">
+                <div className="flex gap-1 mb-4 md:mb-6 mt-3 md:mt-4">
                   {[...Array(review.stars)].map((_, i) => (
                     <Star key={i} className="text-amber-500 fill-amber-500" size={20} />
                   ))}
                 </div>
 
-                <p className='text-neutral-300 text-lg mb-8 leading-relaxed'>"{review.text}"</p>
+                <p className='text-neutral-300 text-base md:text-lg mb-6 md:mb-8 leading-relaxed'>"{review.text}"</p>
                 
-                <div className="border-t border-neutral-800 pt-6">
-                  <h3 className='text-white font-bold text-xl'>{review.name}</h3>
-                  <p className='text-neutral-500 font-medium'>{review.role}</p>
+                <div className="border-t border-neutral-800 pt-4 md:pt-6">
+                  <h3 className='text-white font-bold text-lg md:text-xl'>{review.name}</h3>
+                  <p className='text-neutral-500 font-medium text-sm md:text-base'>{review.role}</p>
                 </div>
              </div>
           ))}
