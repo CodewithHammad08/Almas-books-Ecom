@@ -53,10 +53,20 @@ const Card = ({ title, price, product }) => {
 
         {/* Discount badge */}
         {discountPrice && discountPrice < Number(numericPrice) && (
-          <span className="absolute top-2 right-2 text-[9px] sm:text-[10px] font-bold bg-amber-500 text-black px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full">
+          <span className="absolute top-2 right-2 text-[9px] sm:text-[10px] font-bold bg-amber-500 text-black px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full shadow-lg">
             SALE
           </span>
         )}
+
+        {/* Floating Add to Cart for Mobile */}
+        <button
+          onClick={(e) => { e.stopPropagation(); handleAddToCart(); }}
+          disabled={isOutOfStock}
+          aria-label={`Add ${title} to cart`}
+          className='absolute bottom-2 right-2 md:hidden bg-amber-400 hover:bg-amber-500 text-black p-2 rounded-full shadow-lg transition-transform active:scale-95 disabled:opacity-50 disabled:bg-neutral-700'
+        >
+          {isOutOfStock ? <PackageX size={14} /> : <ShoppingCart size={14} strokeWidth={2.5} />}
+        </button>
       </div>
 
       {/* Content */}
@@ -81,15 +91,15 @@ const Card = ({ title, price, product }) => {
             )}
           </div>
 
+          {/* Desktop Add to Cart */}
           <button
-            onClick={handleAddToCart}
+            onClick={(e) => { e.stopPropagation(); handleAddToCart(); }}
             disabled={isOutOfStock}
             aria-label={`Add ${title} to cart`}
-            className='w-full flex items-center justify-center gap-1.5 sm:gap-2 bg-amber-400 hover:bg-amber-500 text-black font-bold py-2 sm:py-2.5 rounded-lg sm:rounded-xl transition-colors duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-400 text-xs sm:text-sm'
+            className='hidden md:flex w-full items-center justify-center gap-2 bg-amber-400 hover:bg-amber-500 text-black font-bold py-2.5 rounded-xl transition-colors duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-400 text-sm'
           >
-            <ShoppingCart size={16} className="sm:w-[18px] sm:h-[18px]" strokeWidth={2.5} />
-            <span className="hidden sm:inline">{isOutOfStock ? 'Out of Stock' : 'Add to Cart'}</span>
-            <span className="sm:hidden">{isOutOfStock ? 'OOS' : 'Add'}</span>
+            <ShoppingCart size={18} strokeWidth={2.5} />
+            <span>{isOutOfStock ? 'Out of Stock' : 'Add to Cart'}</span>
           </button>
         </div>
       </div>
@@ -97,4 +107,4 @@ const Card = ({ title, price, product }) => {
   )
 }
 
-export default Card
+export default Card

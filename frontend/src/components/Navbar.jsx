@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Menu, X, ShoppingBag, ShoppingCart, User, LogOut, LayoutDashboard, MapPin, ClipboardList } from 'lucide-react';
-import { Link, useNavigate } from "react-router-dom";
+import { Search, Menu, X, ShoppingBag, ShoppingCart, User, LogOut, LayoutDashboard, MapPin, ClipboardList, Home } from 'lucide-react';
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 
@@ -11,6 +11,7 @@ const Navbar = () => {
   const { user, logout, loading } = useAuth();
   const { cartCount } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
   const menuRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -51,7 +52,7 @@ const Navbar = () => {
 
   return (
     <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled ? 'py-3 md:py-4' : 'py-4 md:py-6'} ${scrolled || isOpen ? 'bg-black/90 backdrop-blur-md border-b border-white/10' : 'bg-transparent'}`}>
-      <div className="max-w-7xl mx-auto px-4 md:px-10 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 md:px-10 flex items-center justify-center md:justify-between">
         {/* Logo / Brand */}
         <Link to="/" className="group flex items-center gap-3">
           <div className="flex flex-col">
@@ -186,80 +187,29 @@ const Navbar = () => {
               )}
             </Link>
         </div>
-
-        {/* Hamburger Button */}
-        <div className="md:hidden">
-          <button 
-            onClick={() => setIsOpen(!isOpen)} 
-            className="text-white hover:text-amber-400 transition-colors p-2"
-            aria-label="Toggle menu"
-          >
-            {isOpen ? <X size={28} /> : <Menu size={28} />}
-          </button>
-        </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
-      <div className={`absolute top-full left-0 w-full bg-black/95 backdrop-blur-xl border-b border-white/10 transition-all duration-300 overflow-hidden md:hidden ${isOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}>
-        <div className="flex flex-col p-6 gap-4">
-          {/* Mobile user info when logged in */}
-          {user && (
-            <div className="flex items-center gap-3 border-b border-white/10 pb-4 mb-1">
-              <div className="w-10 h-10 rounded-full bg-amber-500 text-black font-bold text-base flex items-center justify-center uppercase">
-                {user.name?.charAt(0) || 'U'}
-              </div>
-              <div>
-                <p className="text-white font-bold text-sm">{user.name}</p>
-                <p className="text-neutral-400 text-xs">{user.role}</p>
-              </div>
-            </div>
-          )}
-
-          <Link to="/" onClick={() => setIsOpen(false)} className="text-lg font-medium text-neutral-300 hover:text-amber-400 transition-colors border-b border-white/5 pb-3">Home</Link>
-          <Link to="/print-services" onClick={() => setIsOpen(false)} className="text-lg font-medium text-neutral-300 hover:text-amber-400 transition-colors border-b border-white/5 pb-3">Printing Services</Link>
-          <Link to="/about" onClick={() => setIsOpen(false)} className="text-lg font-medium text-neutral-300 hover:text-amber-400 transition-colors border-b border-white/5 pb-3">About</Link>
-          <Link to="/contact" onClick={() => setIsOpen(false)} className="text-lg font-medium text-neutral-300 hover:text-amber-400 transition-colors border-b border-white/5 pb-3">Contact Us</Link>
-          
-          {user ? (
-            <>
-              {user.role === 'admin' && (
-                <Link to="/admin" onClick={() => setIsOpen(false)} className="text-lg font-medium text-amber-400 hover:text-amber-300 transition-colors border-b border-white/5 pb-3 flex items-center gap-2">
-                  <LayoutDashboard size={20} /> Admin Dashboard
-                </Link>
-              )}
-              <button
-                onClick={() => { handleLogout(); setIsOpen(false); }}
-                className="text-lg font-medium text-red-400 hover:text-red-300 transition-colors border-b border-white/5 pb-3 flex items-center gap-2 text-left"
-              >
-                <LogOut size={20} /> Sign Out
-              </button>
-            </>
-          ) : (
-            <Link to="/login" onClick={() => setIsOpen(false)} className="text-lg font-medium text-neutral-300 hover:text-amber-400 transition-colors border-b border-white/5 pb-3">Login</Link>
-          )}
-
-          <Link to="/cart" onClick={() => setIsOpen(false)} className="text-lg font-medium text-neutral-300 hover:text-amber-400 transition-colors border-b border-white/5 pb-3 flex items-center justify-between">
-            Cart
-            {cartCount > 0 && <span className="bg-amber-500 text-black text-xs font-bold px-2 py-0.5 rounded-full">{cartCount} Items</span>}
-          </Link>
-          <Link to="/shop" onClick={() => setIsOpen(false)} className="text-lg font-bold text-black bg-amber-500 rounded-xl p-3 text-center hover:bg-amber-600 transition-colors flex items-center justify-center gap-2">
-            <ShoppingBag size={20} /> Shop Now
-          </Link>
-          
-          {/* Mobile Search */}
-          <form onSubmit={handleSearchSubmit} className="relative mt-2">
-            <input 
-                type="text" 
-                placeholder="Search products..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-neutral-900 border border-neutral-800 text-neutral-300 rounded-xl px-4 py-3 focus:border-amber-500 focus:outline-none transition-colors"
-            />
-            <button type="submit" className="absolute right-4 top-3.5 text-neutral-500">
-                <Search size={20} />
-            </button>
-          </form>
-        </div>
+      {/* Mobile Bottom Navigation (App-like) */}
+      <div className="md:hidden fixed bottom-0 left-0 w-full bg-black/95 backdrop-blur-xl border-t border-neutral-800 z-50 px-6 py-3 flex justify-between items-center pb-safe">
+        <Link to="/" className="flex flex-col items-center gap-1 text-neutral-400 hover:text-amber-500">
+          <Home size={22} className={location.pathname === '/' ? 'text-amber-500' : ''} />
+          <span className={`text-[10px] font-medium ${location.pathname === '/' ? 'text-amber-500' : ''}`}>Home</span>
+        </Link>
+        <Link to="/shop" className="flex flex-col items-center gap-1 text-neutral-400 hover:text-amber-500">
+          <ShoppingBag size={22} className={location.pathname === '/shop' ? 'text-amber-500' : ''} />
+          <span className={`text-[10px] font-medium ${location.pathname === '/shop' ? 'text-amber-500' : ''}`}>Shop</span>
+        </Link>
+        <Link to="/cart" className="relative flex flex-col items-center gap-1 text-neutral-400 hover:text-amber-500">
+          <div className="relative">
+            <ShoppingCart size={22} className={location.pathname === '/cart' ? 'text-amber-500' : ''} />
+            {cartCount > 0 && <span className="absolute -top-1.5 -right-2 w-4 h-4 bg-amber-500 text-black text-[9px] font-bold flex items-center justify-center rounded-full">{cartCount}</span>}
+          </div>
+          <span className={`text-[10px] font-medium ${location.pathname === '/cart' ? 'text-amber-500' : ''}`}>Cart</span>
+        </Link>
+        <Link to={user ? "/my-orders" : "/login"} className="flex flex-col items-center gap-1 text-neutral-400 hover:text-amber-500">
+          <User size={22} className={(location.pathname === '/login' || location.pathname === '/my-orders') ? 'text-amber-500' : ''} />
+          <span className={`text-[10px] font-medium ${(location.pathname === '/login' || location.pathname === '/my-orders') ? 'text-amber-500' : ''}`}>Profile</span>
+        </Link>
       </div>
     </nav>
   )
@@ -268,4 +218,6 @@ const Navbar = () => {
 
 export default Navbar;
 
-
+
+
+
