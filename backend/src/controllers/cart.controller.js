@@ -37,7 +37,7 @@ const addToCart = asyncHandler(async (req, res) => {
         cart.items[itemIndex].quantity += quantity ? Number(quantity) : 1;
     } else {
         // Product does not exist in cart, add new item
-        cart.items.push({ product: productId, quantity: quantity ? Number(quantity) : 1 });
+        cart.items.push({ product: productId, quantity: quantity ? Number(quantity) : 1, priceAtAdd: product.price });
     }
 
     await cart.save();
@@ -70,8 +70,31 @@ const removeFromCart = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, cart, "Item removed from cart successfully"));
 });
 
+const syncCart = asyncHandler(async (req, res) => {
+    const { items } = req.body;
+    
+    if (!Array.isArray(items)) {
+        throw new ApiError(400, "Items must be an array");
+    }
+    
+    let cart = await Cart.findOne({ user: req.user._id });
+    if (!cart) cart = await Cart.create({ user: req.user._id, items: [] });
+
+    cart.items = items.map(item => ({
+        product: item._id || item.product,
+        quantity: item.quantity,
+        priceAtAdd: item.price || item.priceAtAdd || 0
+    }));
+
+    await cart.save();
+    await cart.populate('items.product');
+
+    return res.status(200).json(new ApiResponse(200, cart, "Cart synced successfully"));
+});
+
 export {
     getCart,
     addToCart,
-    removeFromCart
+    removeFromCart,
+    syncCart
 };

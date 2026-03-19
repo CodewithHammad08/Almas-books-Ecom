@@ -1,53 +1,220 @@
-import React, { useEffect, useState } from 'react';
-import { BookOpen } from 'lucide-react';
+import React, { useEffect, useRef } from 'react';
+import anime from 'animejs';
 
 const Loader = () => {
-  const [startAnimation, setStartAnimation] = useState(false);
+  const containerRef = useRef(null);
 
   useEffect(() => {
-    // Trigger the smooth CSS transition shortly after mount
-    const timer = setTimeout(() => setStartAnimation(true), 100);
-    return () => clearTimeout(timer);
+    const container = containerRef.current;
+    if (!container) return;
+
+    const animations = [];
+
+    // 1. Draw Static Book Lines
+    animations.push(
+      anime({
+        targets: container.querySelectorAll('.book-static'),
+        strokeDasharray: anime.setDashoffset,
+        strokeDashoffset: [anime.setDashoffset, 0],
+        duration: 2000,
+        easing: 'easeInOutSine',
+        delay: anime.stagger(150),
+      })
+    );
+
+    // 2. Floating Book Pulse
+    animations.push(
+      anime({
+        targets: container.querySelector('.book-wrapper'),
+        filter: [
+          'drop-shadow(0px 0px 0px rgba(245,158,11,0))',
+          'drop-shadow(0px 0px 20px rgba(245,158,11,0.5))',
+        ],
+        translateY: ['0px', '-5px'],
+        duration: 2500,
+        easing: 'easeInOutSine',
+        direction: 'alternate',
+        loop: true,
+      })
+    );
+
+    // 3. Page Flip Effect
+    animations.push(
+      anime({
+        targets: container.querySelectorAll('.flying-page'),
+        rotateY: [0, 180],
+        translateX: [0, 10],
+        opacity: [0, 1, 0],
+        duration: 1600,
+        easing: 'easeInOutSine',
+        delay: anime.stagger(800, { start: 500 }),
+        loop: true,
+      })
+    );
+
+    // 4. Brand Animation
+    const timeline = anime.timeline();
+
+    timeline
+      .add({
+        targets: container.querySelectorAll('.brand-char'),
+        opacity: [0, 1],
+        translateY: [20, 0],
+        duration: 800,
+        easing: 'easeOutExpo',
+        delay: anime.stagger(100, { start: 1200 }),
+      })
+      .add(
+        {
+          targets: container.querySelector('.brand-divider'),
+          scaleY: [0, 1],
+          opacity: [0, 1],
+          duration: 800,
+          easing: 'easeOutExpo',
+        },
+        '-=600'
+      )
+      .add(
+        {
+          targets: container.querySelector('.subtitle'),
+          opacity: [0, 0.7],
+          letterSpacing: ['0.1em', '0.4em'],
+          duration: 1500,
+          easing: 'easeOutQuart',
+        },
+        '-=400'
+      );
+
+    animations.push(timeline);
+
+    // 5. Progress Bar
+    animations.push(
+      anime({
+        targets: container.querySelector('.progress-track'),
+        width: ['0%', '100%'],
+        duration: 3000,
+        easing: 'easeInOutQuart',
+        loop: true,
+      })
+    );
+
+    // 6. Particles
+    const particles = container.querySelectorAll('.particle');
+    particles.forEach((p) => {
+      animations.push(
+        anime({
+          targets: p,
+          translateY: [0, anime.random(-80, -150)],
+          translateX: [0, anime.random(-30, 30)],
+          opacity: [0, 1, 0],
+          scale: [0, anime.random(0.5, 1.2), 0],
+          duration: anime.random(2000, 3500),
+          easing: 'easeOutSine',
+          loop: true,
+          delay: anime.random(0, 1500),
+        })
+      );
+    });
+
+    // Cleanup
+    return () => {
+      animations.forEach((anim) => anim.pause());
+      anime.remove(container.querySelectorAll('*'));
+    };
   }, []);
 
+  const arabicWord = "الماس".split("");
+  const englishWord = "ALMAS".split("");
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black px-4">
-      {/* Ambient Background Glow - Breathing */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 sm:w-96 sm:h-96 md:w-[600px] md:h-[600px] bg-amber-500/5 rounded-full blur-[60px] sm:blur-[100px] md:blur-[120px] pointer-events-none animate-pulse duration-[3000ms]" />
-      
-      <div className="relative z-10 flex flex-col items-center">
-        {/* Icon Container */}
-        <div className="relative mb-8 sm:mb-10">
-            {/* Elegant thin rings */}
-            <div className="absolute -inset-6 sm:-inset-8 rounded-full border border-neutral-800/50"></div>
-            <div className="absolute -inset-6 sm:-inset-8 rounded-full border-t border-amber-500/30 animate-spin" style={{ animationDuration: '3s' }}></div>
-            
-            <div className="absolute -inset-3 sm:-inset-4 rounded-full border border-neutral-800/50"></div>
-            <div className="absolute -inset-3 sm:-inset-4 rounded-full border-r border-amber-500/50 animate-spin" style={{ animationDuration: '2s', animationDirection: 'reverse' }}></div>
-            
-            {/* Center Icon with Glow */}
-            <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-black border border-neutral-800 flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.15)] sm:shadow-[0_0_50px_rgba(245,158,11,0.15)] relative z-10 group">
-                <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" strokeWidth={1.5} />
-            </div>
+    <div
+      ref={containerRef}
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#070707] px-4 overflow-hidden"
+    >
+      {/* Background Glow */}
+      <div className="absolute w-[400px] h-[400px] bg-amber-600/10 rounded-full blur-[100px]" />
+
+      {/* Particles */}
+      {[...Array(8)].map((_, i) => (
+        <div
+          key={i}
+          className="particle absolute w-1 h-1 bg-amber-500 rounded-full opacity-0"
+        />
+      ))}
+
+      {/* Book */}
+      <div className="relative mb-10 w-32 h-32 flex items-center justify-center">
+        <div className="book-wrapper relative w-full h-full">
+          <svg viewBox="0 0 100 100" className="w-full h-full">
+            <path
+              className="book-static"
+              d="M 50 90 L 50 30"
+              stroke="#f59e0b"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            />
+            <path
+              className="book-static"
+              d="M 50 90 Q 25 100 10 75 L 10 15 Q 25 40 50 30"
+              stroke="#f59e0b"
+              strokeWidth="2"
+              fill="none"
+            />
+            <path
+              className="book-static"
+              d="M 50 90 Q 75 100 90 75 L 90 15 Q 75 40 50 30"
+              stroke="#f59e0b"
+              strokeWidth="2"
+              fill="none"
+            />
+            <path
+              className="flying-page"
+              d="M 50 85 Q 70 92 84 75 L 84 20 Q 70 38 50 30"
+              stroke="#f59e0b"
+              strokeWidth="1.5"
+              fill="none"
+            />
+            <path
+              className="flying-page"
+              d="M 50 85 Q 30 92 16 75 L 16 20 Q 30 38 50 30"
+              stroke="#f59e0b"
+              strokeWidth="1.5"
+              fill="none"
+            />
+          </svg>
+        </div>
+      </div>
+
+      {/* Brand */}
+      <div className="flex flex-col items-center mb-10">
+        <div className="flex items-center gap-4 text-4xl font-bold text-white">
+          <div className="flex" dir="rtl">
+            {arabicWord.map((c, i) => (
+              <span key={i} className="brand-char text-amber-500 opacity-0">
+                {c}
+              </span>
+            ))}
+          </div>
+
+          <div className="brand-divider w-[1px] h-8 bg-amber-500 opacity-0" />
+
+          <div className="flex tracking-[0.3em]">
+            {englishWord.map((c, i) => (
+              <span key={i} className="brand-char opacity-0">
+                {c}
+              </span>
+            ))}
+          </div>
         </div>
 
-        {/* Brand Name */}
-        <div className="flex items-center gap-3 sm:gap-4 text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 tracking-widest">
-            <span className="text-amber-500 font-serif">الماس</span>
-            <span className="w-px h-6 sm:h-8 bg-neutral-800"></span>
-            <span className="font-sans tracking-[0.2em]">ALMAS</span>
-        </div>
-        
-        <p className="text-neutral-500 text-[8px] sm:text-[10px] tracking-[0.3em] sm:tracking-[0.5em] uppercase mb-8 sm:mb-10 opacity-80 text-center">
+        <p className="subtitle text-gray-400 text-xs tracking-widest opacity-0 mt-2">
           Premium Stationery
         </p>
+      </div>
 
-        {/* Smooth Progress Bar */}
-        <div className="w-32 sm:w-48 h-px bg-neutral-900 rounded-full overflow-hidden relative">
-            <div 
-                className={`absolute top-0 left-0 h-full bg-gradient-to-r from-amber-600 to-amber-400 shadow-[0_0_15px_rgba(245,158,11,1)] transition-all duration-[1800ms] ease-out ${startAnimation ? 'w-full' : 'w-0'}`}
-            />
-        </div>
+      {/* Progress */}
+      <div className="w-64 h-[2px] bg-gray-800 overflow-hidden">
+        <div className="progress-track h-full bg-amber-500 w-0" />
       </div>
     </div>
   );

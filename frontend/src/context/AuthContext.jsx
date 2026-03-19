@@ -69,6 +69,7 @@ export const AuthProvider = ({ children }) => {
             // Always clear local state regardless of backend response
             setUser(null);
             localStorage.removeItem('almas_user');
+            localStorage.removeItem('savedAddress'); // Prevent address leak to next user session
         }
     };
 

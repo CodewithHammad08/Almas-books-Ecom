@@ -160,4 +160,30 @@ const logoutUser = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, {}, "Logged out successfully"));
 });
 
-export { registerUser, loginUser, getUserProfile, googleLogin, logoutUser };
+// ─── UPDATE ADDRESS ──────────────────────────────────────────────────────────
+const updateUserAddress = asyncHandler(async (req, res) => {
+    const { street, city, pincode } = req.body;
+    
+    // Safety check ensuring we edit a User model not Admin
+    if (!req.user || req.user.model === 'Admin') {
+        throw new ApiError(403, "Invalid account context for updating delivery addresses");
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set: {
+                "address.street": street || "",
+                "address.city": city || "",
+                "address.pincode": pincode || ""
+            }
+        },
+        { new: true }
+    ).select("-password -refreshToken");
+
+    return res.status(200).json(
+        new ApiResponse(200, updatedUser, "Address updated successfully")
+    );
+});
+
+export { registerUser, loginUser, getUserProfile, googleLogin, logoutUser, updateUserAddress };
