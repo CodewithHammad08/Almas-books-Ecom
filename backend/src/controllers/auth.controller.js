@@ -162,22 +162,26 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 // ─── UPDATE ADDRESS ──────────────────────────────────────────────────────────
 const updateUserAddress = asyncHandler(async (req, res) => {
-    const { street, city, pincode } = req.body;
+    const { street, city, pincode, phone } = req.body;
     
     // Safety check ensuring we edit a User model not Admin
     if (!req.user || req.user.model === 'Admin') {
         throw new ApiError(403, "Invalid account context for updating delivery addresses");
     }
 
+    const updateData = {
+        "address.street": street || "",
+        "address.city": city || "",
+        "address.pincode": pincode || ""
+    };
+
+    if (phone) {
+        updateData.phone = phone;
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
         req.user._id,
-        {
-            $set: {
-                "address.street": street || "",
-                "address.city": city || "",
-                "address.pincode": pincode || ""
-            }
-        },
+        { $set: updateData },
         { new: true }
     ).select("-password -refreshToken");
 

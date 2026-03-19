@@ -341,15 +341,16 @@ const InvoiceModal = ({ order, address, paymentMethod, cartItems, total, shippin
 };
 
 // ─── CHECKOUT MODAL ───────────────────────────────────────────────────────────
-const CheckoutModal = ({ cartItems, subtotal, shipping, total, user, onClose, onSuccess }) => {
+const CheckoutModal = ({ cartItems, subtotal, shipping, total, onClose, onSuccess }) => {
+  const { user, refreshProfile } = useAuth();
   const [step, setStep] = useState(1);
   const saved = (() => { try { return JSON.parse(localStorage.getItem('savedAddress') || '{}'); } catch { return {}; } })();
   const [address, setAddress] = useState({
-    name: saved.name || user?.name || '',
-    phone: saved.phone || user?.phone || '',
-    street: saved.street || '',
-    city: saved.city || '',
-    pincode: saved.pincode || '',
+    name: user?.name || saved.name || '',
+    phone: user?.phone || saved.phone || '',
+    street: user?.address?.street || saved.street || '',
+    city: user?.address?.city || saved.city || '',
+    pincode: user?.address?.pincode || saved.pincode || '',
   });
   const [paymentMethod, setPaymentMethod] = useState('COD');
   const [placing, setPlacing] = useState(false);
@@ -361,6 +362,26 @@ const CheckoutModal = ({ cartItems, subtotal, shipping, total, user, onClose, on
     setError('');
     try {
       localStorage.setItem('savedAddress', JSON.stringify(address));
+      
+      // Save address/phone to user profile in DB
+      if (user) {
+        try {
+          await api.put('/auth/address', {
+            street: address.street,
+            city: address.city,
+            pincode: address.pincode,
+            phone: address.phone
+          });
+          // Refresh the user profile in AuthContext
+          if (typeof refreshProfile === 'function') {
+            await refreshProfile();
+          }
+        } catch (addrErr) {
+          console.error("Failed to save address to profile:", addrErr);
+          // Don't block the order if just address saving fails
+        }
+      }
+
       const orderData = {
         items: cartItems.map(item => ({ product: item._id, quantity: item.quantity, price: item.price })),
         totalPrice: total,
@@ -483,7 +504,6 @@ const Cart = () => {
           subtotal={subtotal}
           shipping={shipping}
           total={total}
-          user={user}
           onClose={() => setCheckoutOpen(false)}
           onSuccess={handleOrderSuccess}
         />

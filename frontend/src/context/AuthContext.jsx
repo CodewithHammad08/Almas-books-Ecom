@@ -39,6 +39,19 @@ export const AuthProvider = ({ children }) => {
         verifySession();
     }, []);
 
+    const refreshProfile = async () => {
+        try {
+            const response = await api.get('/auth/profile');
+            const freshUser = response.data.data;
+            setUser(freshUser);
+            localStorage.setItem('almas_user', JSON.stringify(freshUser));
+            return freshUser;
+        } catch (error) {
+            console.error("Profile refresh failed:", error);
+            return null;
+        }
+    };
+
     const login = async (email, password) => {
         const response = await api.post('/auth/login', { email, password });
         const loggedInUser = response.data.data.user;
@@ -70,11 +83,12 @@ export const AuthProvider = ({ children }) => {
             setUser(null);
             localStorage.removeItem('almas_user');
             localStorage.removeItem('savedAddress'); // Prevent address leak to next user session
+            localStorage.removeItem('cart'); // Clear cart on logout
         }
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, googleLogin, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, register, googleLogin, logout, refreshProfile, loading }}>
             {children}
         </AuthContext.Provider>
     );
