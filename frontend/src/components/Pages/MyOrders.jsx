@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { ShoppingBag, Package, Truck, CheckCircle2, XCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { ShoppingBag, Package, Truck, CheckCircle2, XCircle, Clock, ChevronDown, ChevronUp, Printer } from 'lucide-react';
 import api from '../../api/axios';
 
 const statusConfig = {
@@ -17,6 +17,24 @@ const OrderCard = ({ order }) => {
   const [expanded, setExpanded] = useState(false);
   const status = statusConfig[order.orderStatus] || statusConfig.pending;
   const date = new Date(order.createdAt).toLocaleDateString('en-PK', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const handleDownloadInvoice = async (e) => {
+    e.stopPropagation(); // Prevent card expansion
+    try {
+      const response = await api.get(`/payments/invoice/${order._id}`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `invoice_${order._id.slice(-6)}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      alert("Failed to download invoice. It might not be ready yet.");
+    }
+  };
 
   return (
     <div className="bg-neutral-900 border border-neutral-800 rounded-3xl overflow-hidden hover:border-amber-500/30 transition-all duration-300">
@@ -37,11 +55,21 @@ const OrderCard = ({ order }) => {
 
         <div className="flex items-center gap-4">
           <div className="text-right">
-            <p className="text-neutral-500 text-xs">Total</p>
+            <p className="text-neutral-500 text-xs text-right">Total</p>
             <p className="text-amber-400 font-black text-xl">₹{order.totalPrice?.toLocaleString()}</p>
           </div>
-          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shrink-0 ${status.color}`}>
-            {status.icon} {status.label}
+          <div className="flex flex-col items-end gap-2">
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shrink-0 ${status.color}`}>
+              {status.icon} {status.label}
+            </div>
+            {order.paymentStatus === 'paid' && (
+              <button 
+                onClick={handleDownloadInvoice}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tighter bg-amber-500 text-black hover:bg-amber-400 transition-all shadow-lg shadow-amber-500/10 active:scale-95"
+              >
+                <Printer size={12} /> Invoice
+              </button>
+            )}
           </div>
         </div>
       </div>

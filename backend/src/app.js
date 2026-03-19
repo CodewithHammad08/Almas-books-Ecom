@@ -25,6 +25,7 @@ import contactRouter from './routes/contact.routes.js'
 import testimonialRouter from './routes/testimonial.routes.js'
 import wishlistRouter from './routes/wishlist.routes.js'
 import reviewRouter from './routes/review.routes.js'
+import paymentRouter from './routes/payment.routes.js'
 
 // routes declaration
 app.use("/api/auth", authRouter)
@@ -37,6 +38,7 @@ app.use("/api/contact", contactRouter)
 app.use("/api/testimonials", testimonialRouter)
 app.use("/api/wishlist", wishlistRouter)
 app.use("/api/reviews", reviewRouter)
+app.use("/api/payments", paymentRouter)
 
 app.get('/', (req, res) => {
     res.send("Almas Books Backend server is running!");

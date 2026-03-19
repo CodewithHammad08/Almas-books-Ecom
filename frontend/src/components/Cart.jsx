@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, X, MapPin, CreditCard, Banknote, CheckCircle, Printer, Package } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, X, MapPin, CreditCard, Banknote, CheckCircle, Printer, Package, QrCode } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -102,8 +102,10 @@ const PaymentStep = ({ method, onChange, onNext, onBack, total }) => {
       setProcessing(true);
       await new Promise(r => setTimeout(r, 1800)); // simulate payment processing
       setProcessing(false);
+      onNext();
+    } else {
+      onNext();
     }
-    onNext();
   };
 
   return (
@@ -117,10 +119,11 @@ const PaymentStep = ({ method, onChange, onNext, onBack, total }) => {
       </div>
 
       {/* Method Selector */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         {[
+          { id: 'QR', label: 'UPI / QR', icon: <QrCode size={22} />, sub: 'Scan & Pay Instantly' },
           { id: 'COD', label: 'Cash on Delivery', icon: <Banknote size={22} />, sub: 'Pay when you receive' },
-          { id: 'Online', label: 'Card / Online', icon: <CreditCard size={22} />, sub: 'Visa, Mastercard, etc.' },
+          { id: 'Online', label: 'Credit/Debit Card', icon: <CreditCard size={22} />, sub: 'Visa, Mastercard' },
         ].map(opt => (
           <button
             key={opt.id}
@@ -135,6 +138,17 @@ const PaymentStep = ({ method, onChange, onNext, onBack, total }) => {
           </button>
         ))}
       </div>
+
+      {/* QR Info */}
+      {method === 'QR' && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-6 text-sm text-amber-400 flex items-center gap-3">
+          <div className="p-2 bg-amber-500/20 rounded-lg"><QrCode size={20} /></div>
+          <div>
+            <p className="font-bold">Scan & Pay via UPI</p>
+            <p className="text-xs text-neutral-400">A dynamic QR code will be generated for your order.</p>
+          </div>
+        </div>
+      )}
 
       {/* COD Info */}
       {method === 'COD' && (
@@ -184,13 +198,97 @@ const PaymentStep = ({ method, onChange, onNext, onBack, total }) => {
         </button>
         <button
           onClick={handlePay}
-          disabled={!isCardValid || processing}
-          className="flex-[2] bg-amber-500 hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2"
+          disabled={(method === 'Online' && !isCardValid) || processing}
+          className="flex-[2] bg-amber-500 hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed text-black font-black py-3.5 rounded-xl transition-all flex items-center justify-center gap-2"
         >
           {processing ? (
             <><div className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" /> Processing...</>
           ) : (
-            <>{method === 'COD' ? 'Place Order' : `Pay ₹${total.toLocaleString()}`} <ArrowRight size={18} /></>
+            <>{method === 'COD' ? 'Place Order' : method === 'QR' ? 'Proceed to QR' : `Pay ₹${total.toLocaleString()}`} <ArrowRight size={18} /></>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ─── QR PAYMENT STEP ─────────────────────────────────────────────────────────
+const QRPaymentStep = ({ order, onConfirm, onBack }) => {
+  const [qrData, setQrData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [transactionId, setTransactionId] = useState('');
+  const [confirming, setConfirming] = useState(false);
+
+  React.useEffect(() => {
+    const fetchQR = async () => {
+      try {
+        const res = await api.get(`/payments/qr/${order._id}`);
+        setQrData(res.data.data.qrDataUrl);
+      } catch (err) {
+        console.error("QR Fetch failed:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchQR();
+  }, [order._id]);
+
+  const handleConfirm = async () => {
+    if (!transactionId.trim()) return;
+    setConfirming(true);
+    try {
+      await api.post('/payments/confirm', { orderId: order._id, transactionId });
+      onConfirm();
+    } catch (err) {
+      alert("Verification failed. Please check your Transaction ID.");
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  return (
+    <div className="text-center">
+      <div className="flex items-center gap-3 mb-6 text-left">
+        <div className="p-2.5 bg-amber-500/20 rounded-xl"><Printer size={20} className="text-amber-400" /></div>
+        <div>
+          <h3 className="text-white font-bold text-lg">Scan & Pay</h3>
+          <p className="text-neutral-500 text-xs">Complete your payment instantly</p>
+        </div>
+      </div>
+      
+      <div className="bg-white p-5 rounded-[2.5rem] inline-block mb-8 shadow-2xl relative border-[8px] border-amber-500/10">
+        {loading ? (
+          <div className="w-[220px] h-[220px] flex items-center justify-center bg-neutral-100 rounded-3xl">
+            <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <img src={qrData} alt="Payment QR" className="w-[220px] h-[220px] rounded-2xl" />
+        )}
+      </div>
+
+      <div className="mb-6 text-left">
+        <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2 block">Transaction ID / UTR Number</label>
+        <input
+          type="text"
+          value={transactionId}
+          onChange={e => setTransactionId(e.target.value)}
+          placeholder="e.g. 123456789012"
+          className="w-full bg-black border border-neutral-700 text-white rounded-xl px-4 py-3.5 text-center font-mono text-xl focus:outline-none focus:border-amber-500 transition-colors placeholder:text-neutral-800"
+        />
+        <p className="text-[10px] text-neutral-600 mt-2 text-center uppercase tracking-widest font-bold font-mono">Check your UPI app for Ref No.</p>
+      </div>
+
+      <div className="flex gap-3">
+        <button onClick={onBack} className="flex-1 py-4 rounded-xl border border-neutral-700 text-neutral-400 hover:text-white transition-colors text-sm font-bold">Cancel</button>
+        <button
+          onClick={handleConfirm}
+          disabled={!transactionId.trim() || confirming}
+          className="flex-[2] bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-black py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
+        >
+          {confirming ? (
+             <><div className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" /> Verifying...</>
+          ) : (
+             <>Verify & Complete <CheckCircle size={18} /></>
           )}
         </button>
       </div>
@@ -200,6 +298,26 @@ const PaymentStep = ({ method, onChange, onNext, onBack, total }) => {
 
 // ─── INVOICE MODAL ────────────────────────────────────────────────────────────
 const InvoiceModal = ({ order, address, paymentMethod, cartItems, total, shipping, onClose }) => {
+  const navigate = useNavigate();
+  const date = new Date().toLocaleDateString('en-PK', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const handleDownloadPDF = async () => {
+    try {
+      const response = await api.get(`/payments/invoice/${order._id}`, {
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `invoice_${order._id.slice(-6)}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      alert("Failed to download invoice. Please try from My Orders.");
+    }
+  };
+
   const handlePrint = () => {
     const printContent = document.getElementById('invoice-print-area').innerHTML;
     const win = window.open('', '_blank', 'width=800,height=700');
@@ -211,14 +329,9 @@ const InvoiceModal = ({ order, address, paymentMethod, cartItems, total, shippin
           .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; border-bottom: 2px solid #f59e0b; padding-bottom: 20px; }
           .brand { font-size: 24px; font-weight: 900; color: #111; }
           .brand span { color: #f59e0b; }
-          .invoice-id { font-size: 12px; color: #666; margin-top: 4px; }
-          .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #888; margin-bottom: 8px; }
-          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 32px; }
           table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
           th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #888; padding: 8px 0; border-bottom: 1px solid #e5e5e5; }
           td { padding: 10px 0; font-size: 13px; border-bottom: 1px solid #f5f5f5; }
-          .total-row { font-weight: 900; font-size: 15px; color: #f59e0b; }
-          .label { color: #666; font-size: 12px; }
           .footer { text-align: center; color: #aaa; font-size: 11px; margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; }
         </style>
       </head><body>${printContent}</body></html>
@@ -227,12 +340,9 @@ const InvoiceModal = ({ order, address, paymentMethod, cartItems, total, shippin
     win.print();
   };
 
-  const navigate = useNavigate();
-  const date = new Date().toLocaleDateString('en-PK', { year: 'numeric', month: 'long', day: 'numeric' });
-
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-3xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center p-4 ring-1 ring-white/10" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-[2.5rem] w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-[0_0_100px_rgba(245,158,11,0.2)]">
 
         {/* Green success header */}
         <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-8 rounded-t-3xl text-center">
@@ -273,8 +383,8 @@ const InvoiceModal = ({ order, address, paymentMethod, cartItems, total, shippin
             </div>
             <div>
               <div className="section-title" style={{fontSize:'11px', fontWeight:'700', textTransform:'uppercase', letterSpacing:'0.1em', color:'#888', marginBottom:'8px'}}>Payment Info</div>
-              <p style={{fontSize:'13px', color:'#555'}}><strong>Method:</strong> {paymentMethod === 'COD' ? 'Cash on Delivery' : 'Card / Online'}</p>
-              <p style={{fontSize:'13px', color:'#555', marginTop:'4px'}}><strong>Status:</strong> <span style={{color: paymentMethod === 'COD' ? '#f59e0b' : '#22c55e'}}>{paymentMethod === 'COD' ? 'Pending (COD)' : 'Paid'}</span></p>
+              <p style={{fontSize:'13px', color:'#555'}}><strong>Method:</strong> {paymentMethod === 'COD' ? 'Cash on Delivery' : paymentMethod === 'QR' ? 'UPI / QR Code' : 'Card / Online'}</p>
+              <p style={{fontSize:'13px', color:'#555', marginTop:'4px'}}><strong>Status:</strong> <span style={{color: paymentMethod === 'COD' ? '#f59e0b' : '#22c55e', fontWeight:'700'}}>{paymentMethod === 'COD' ? 'Pending (COD)' : 'Paid / Confirmed'}</span></p>
             </div>
           </div>
 
@@ -316,30 +426,30 @@ const InvoiceModal = ({ order, address, paymentMethod, cartItems, total, shippin
 
           {/* Footer */}
           <div className="footer" style={{textAlign:'center', color:'#aaa', fontSize:'11px', marginTop:'40px', borderTop:'1px solid #eee', paddingTop:'20px'}}>
-            Thank you for shopping with Almas Books & General Store 🎉<br />
-            For any queries contact us at: <strong>almasbooks@example.com</strong>
+            This is a system generated invoice officially issued by Almas Books 🎉<br />
+            For queries contact: <strong>support@almasbooks.com</strong>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 px-8 pb-8">
           <button
-            onClick={handlePrint}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold text-sm transition-colors"
+            onClick={handleDownloadPDF}
+            className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl bg-amber-500 hover:bg-amber-600 text-black font-black text-sm transition-all shadow-xl active:scale-95"
           >
-            <Printer size={16} /> Print / Save PDF
+            <Printer size={18} /> Download Official PDF
           </button>
           <button
             onClick={() => { navigate('/my-orders'); onClose(); }}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-sm transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-sm transition-all active:scale-95"
           >
-            <Package size={16} /> Track My Order
+            <Package size={18} /> My Orders
           </button>
           <button
             onClick={onClose}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-black font-bold text-sm transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold text-sm transition-all active:scale-95"
           >
-            Continue Shopping
+            Continue
           </button>
         </div>
       </div>
@@ -351,6 +461,7 @@ const InvoiceModal = ({ order, address, paymentMethod, cartItems, total, shippin
 const CheckoutModal = ({ cartItems, subtotal, shipping, total, onClose, onSuccess }) => {
   const { user, refreshProfile } = useAuth();
   const [step, setStep] = useState(1);
+  const [paymentStep, setPaymentStep] = useState('selection'); // 'selection' or 'qr'
   const saved = (() => { try { return JSON.parse(localStorage.getItem('savedAddress') || '{}'); } catch { return {}; } })();
   const [address, setAddress] = useState({
     name: user?.name || saved.name || '',
@@ -359,7 +470,7 @@ const CheckoutModal = ({ cartItems, subtotal, shipping, total, onClose, onSucces
     city: user?.address?.city || saved.city || '',
     pincode: user?.address?.pincode || saved.pincode || '',
   });
-  const [paymentMethod, setPaymentMethod] = useState('COD');
+  const [paymentMethod, setPaymentMethod] = useState('QR');
   const [placing, setPlacing] = useState(false);
   const [placedOrder, setPlacedOrder] = useState(null);
   const [error, setError] = useState('');
@@ -397,7 +508,12 @@ const CheckoutModal = ({ cartItems, subtotal, shipping, total, onClose, onSucces
       };
       const res = await api.post('/orders', orderData);
       setPlacedOrder(res.data.data);
-      setStep(3);
+      
+      if (paymentMethod === 'QR') {
+        setPaymentStep('qr');
+      } else {
+        setStep(3);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to place order. Please try again.');
     } finally {
@@ -428,13 +544,21 @@ const CheckoutModal = ({ cartItems, subtotal, shipping, total, onClose, onSucces
           )}
 
           {step === 2 && (
-            <PaymentStep
-              method={paymentMethod}
-              onChange={setPaymentMethod}
-              total={total}
-              onBack={() => setStep(1)}
-              onNext={handlePlaceOrder}
-            />
+            paymentStep === 'qr' ? (
+              <QRPaymentStep 
+                order={placedOrder} 
+                onConfirm={() => setStep(3)} 
+                onBack={() => { setPaymentStep('selection'); setStep(2); }} 
+              />
+            ) : (
+              <PaymentStep
+                method={paymentMethod}
+                onChange={setPaymentMethod}
+                total={total}
+                onBack={() => setStep(1)}
+                onNext={handlePlaceOrder}
+              />
+            )
           )}
 
           {step === 3 && (

@@ -16,7 +16,7 @@ const OrderItemSchema = new mongoose.Schema({
 const OrderSchema = new mongoose.Schema({
     orderNumber: {
         type: String,
-        unique: true
+        sparse: true
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,
@@ -42,13 +42,21 @@ const OrderSchema = new mongoose.Schema({
     },
     paymentMethod: {
         type: String,
-        enum: ["COD", "Online"],
+        enum: ["COD", "Online", "QR"],
         required: true
     },
     paymentStatus: {
         type: String,
         enum: ["pending", "paid", "failed", "refunded"],
         default: "pending"
+    },
+    transactionId: {
+        type: String,
+        default: ""
+    },
+    invoiceUrl: {
+        type: String,
+        default: ""
     },
     orderStatus: {
         type: String,
@@ -60,5 +68,14 @@ const OrderSchema = new mongoose.Schema({
         default: ""
     }
 }, { timestamps: true });
+
+OrderSchema.pre("save", async function () {
+    if (!this.orderNumber) {
+        // Generate a professional order number: ALM-20240319-XXXX
+        const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+        const random = Math.floor(1000 + Math.random() * 9000);
+        this.orderNumber = `ALM-${date}-${random}`;
+    }
+});
 
 export const Order = mongoose.model("Order", OrderSchema);
