@@ -16,16 +16,6 @@ const addReview = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Product not found");
     }
 
-    // Check if user already reviewed this product
-    const existingReview = await Review.findOne({
-        user: req.user._id,
-        product: productId
-    });
-
-    if (existingReview) {
-        throw new ApiError(400, "You have already reviewed this product");
-    }
-
     const review = await Review.create({
         user: req.user._id,
         product: productId,
@@ -42,8 +32,10 @@ const addReview = asyncHandler(async (req, res) => {
     product.reviewsCount = numReviews;
     await product.save();
 
+    const populatedReview = await Review.findById(review._id).populate("user", "name");
+
     return res.status(201).json(
-        new ApiResponse(201, review, "Review added successfully")
+        new ApiResponse(201, populatedReview, "Review added successfully")
     );
 });
 
