@@ -23,6 +23,8 @@ import printRouter from './routes/print.routes.js'
 import categoryRouter from './routes/category.routes.js'
 import contactRouter from './routes/contact.routes.js'
 import testimonialRouter from './routes/testimonial.routes.js'
+import wishlistRouter from './routes/wishlist.routes.js'
+import reviewRouter from './routes/review.routes.js'
 
 // routes declaration
 app.use("/api/auth", authRouter)
@@ -33,6 +35,8 @@ app.use("/api/print-request", printRouter)
 app.use("/api/categories", categoryRouter)
 app.use("/api/contact", contactRouter)
 app.use("/api/testimonials", testimonialRouter)
+app.use("/api/wishlist", wishlistRouter)
+app.use("/api/reviews", reviewRouter)
 
 app.get('/', (req, res) => {
     res.send("Almas Books Backend server is running!");

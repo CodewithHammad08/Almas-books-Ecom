@@ -5,6 +5,7 @@ import Card from "../card";
 import SEO from "../SEO";
 import api from '../../api/axios';
 import { useLocation } from 'react-router-dom';
+import ProductDetailsModal from "../ProductDetailsModal";
 
 const ShoppingPage = () => {
   const location = useLocation();
@@ -13,6 +14,7 @@ const ShoppingPage = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -181,11 +183,19 @@ const ShoppingPage = () => {
                 product={product}
                 title={product.name}
                 price={`₹${product.price}`}
+                onOpen={(p) => setSelectedProduct(p)}
               />
             ))}
           </div>
         )}
       </div>
+
+      {selectedProduct && (
+        <ProductDetailsModal 
+          product={selectedProduct} 
+          onClose={() => setSelectedProduct(null)} 
+        />
+      )}
     </div>
   );
 };

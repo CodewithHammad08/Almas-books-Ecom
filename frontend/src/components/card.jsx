@@ -1,16 +1,21 @@
 import React from 'react'
 import BgImage from "../assets/lib.png";
-import { ShoppingCart, PackageX } from 'lucide-react';
+import { ShoppingCart, PackageX, Heart } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
+import { useAuth } from '../context/AuthContext';
 
-const Card = ({ title, price, product }) => {
+const Card = ({ title, price, product, onOpen }) => {
   const numericPrice = price ? price.toString().replace(/[^0-9.]/g, '') : '';
   const { addToCart } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const { user } = useAuth();
 
   // Support both new schema (images[]) and old schema (image string)
   const imageUrl = product?.images?.[0]?.url || product?.image || BgImage;
   const isOutOfStock = product?.stock === 0;
   const discountPrice = product?.discountPrice;
+  const isSelected = isInWishlist(product?._id || product?.id);
 
   const handleAddToCart = () => {
     if (isOutOfStock) return;
@@ -24,8 +29,22 @@ const Card = ({ title, price, product }) => {
     }
   };
 
+  const handleWishlistClick = (e) => {
+    e.stopPropagation();
+    if (!user) {
+      alert("Please login to use wishlist");
+      return;
+    }
+    toggleWishlist(product);
+  };
+
   return (
-    <article itemScope itemType="https://schema.org/Product" className='group relative w-full h-full flex flex-col rounded-2xl md:rounded-3xl overflow-hidden border border-neutral-800 bg-neutral-900 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-500/10 hover:border-amber-500/50 cursor-pointer'>
+    <article 
+      itemScope 
+      itemType="https://schema.org/Product" 
+      onClick={() => onOpen?.(product)}
+      className='group relative w-full h-full flex flex-col rounded-2xl md:rounded-3xl overflow-hidden border border-neutral-800 bg-neutral-900 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-500/10 hover:border-amber-500/50 cursor-pointer'
+    >
       {/* Image Section */}
       <div className='h-40 sm:h-56 w-full relative overflow-hidden shrink-0'>
         <img
@@ -50,6 +69,19 @@ const Card = ({ title, price, product }) => {
             </span>
           )}
         </div>
+
+        {/* Wishlist Button */}
+        <button
+          onClick={handleWishlistClick}
+          className={`absolute top-2 right-12 p-2 rounded-full backdrop-blur-md border transition-all duration-300 z-20 ${
+            isSelected 
+            ? 'bg-red-500/20 border-red-500/50 text-red-500' 
+            : 'bg-black/40 border-white/10 text-white hover:bg-white hover:text-black hover:border-white'
+          }`}
+          aria-label={isSelected ? "Remove from wishlist" : "Add to wishlist"}
+        >
+          <Heart size={16} fill={isSelected ? "currentColor" : "none"} strokeWidth={isSelected ? 3 : 2} />
+        </button>
 
         {/* Discount badge */}
         {discountPrice && discountPrice < Number(numericPrice) && (

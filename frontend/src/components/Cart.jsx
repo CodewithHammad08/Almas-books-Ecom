@@ -227,6 +227,7 @@ const InvoiceModal = ({ order, address, paymentMethod, cartItems, total, shippin
     win.print();
   };
 
+  const navigate = useNavigate();
   const date = new Date().toLocaleDateString('en-PK', { year: 'numeric', month: 'long', day: 'numeric' });
 
   return (
@@ -244,7 +245,7 @@ const InvoiceModal = ({ order, address, paymentMethod, cartItems, total, shippin
 
         {/* Invoice Body */}
         <div id="invoice-print-area" className="p-8">
-          {/* Print Header */}
+          {/* ... (invoice content) */}
           <div className="header" style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'32px', borderBottom:'2px solid #f59e0b', paddingBottom:'20px'}}>
             <div>
               <div className="brand" style={{fontSize:'24px', fontWeight:'900', color:'#111'}}>
@@ -321,12 +322,18 @@ const InvoiceModal = ({ order, address, paymentMethod, cartItems, total, shippin
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 px-8 pb-8">
+        <div className="flex flex-col sm:flex-row gap-3 px-8 pb-8">
           <button
             onClick={handlePrint}
             className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold text-sm transition-colors"
           >
             <Printer size={16} /> Print / Save PDF
+          </button>
+          <button
+            onClick={() => { navigate('/my-orders'); onClose(); }}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-sm transition-colors"
+          >
+            <Package size={16} /> Track My Order
           </button>
           <button
             onClick={onClose}

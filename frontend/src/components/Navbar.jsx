@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, Menu, X, ShoppingBag, ShoppingCart, User, LogOut, LayoutDashboard, MapPin, ClipboardList, Home } from 'lucide-react';
+import { Search, Menu, X, ShoppingBag, ShoppingCart, User, LogOut, LayoutDashboard, MapPin, ClipboardList, Home, Heart } from 'lucide-react';
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
+import React, { useState, useEffect, useRef } from 'react';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,6 +12,7 @@ const Navbar = () => {
   const [mobileProfileOpen, setMobileProfileOpen] = useState(false);
   const { user, logout, loading } = useAuth();
   const { cartCount } = useCart();
+  const { wishlistItems } = useWishlist();
   const navigate = useNavigate();
   const location = useLocation();
   const menuRef = useRef(null);
@@ -180,6 +182,15 @@ const Navbar = () => {
               )}
             </div>
 
+            <Link to="/wishlist" className="relative group">
+              <div className="p-2.5 rounded-full bg-neutral-900/50 border border-neutral-700 text-neutral-300 hover:text-red-500 hover:border-red-500 hover:bg-black transition-all duration-300">
+                <Heart size={20} fill={wishlistItems.length > 0 ? "currentColor" : "none"} className={wishlistItems.length > 0 ? "text-red-500" : ""} />
+              </div>
+              {wishlistItems.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full animate-pulse">{wishlistItems.length}</span>
+              )}
+            </Link>
+
             <Link to="/cart" className="relative group">
               <div className="p-2.5 rounded-full bg-neutral-900/50 border border-neutral-700 text-neutral-300 hover:text-amber-500 hover:border-amber-500 hover:bg-black transition-all duration-300">
                 <ShoppingCart size={20} />
@@ -251,6 +262,13 @@ const Navbar = () => {
             <ShoppingBag size={22} className={location.pathname === '/shop' ? 'drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]' : ''} />
           </div>
           <span className={`text-[10px] font-bold tracking-wider uppercase ${location.pathname === '/shop' ? 'text-amber-500' : 'text-neutral-500'}`}>Shop</span>
+        </Link>
+        <Link to="/wishlist" className="flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-300 flex-1">
+          <div className={`relative p-2 rounded-xl transition-all duration-300 ${location.pathname === '/wishlist' ? 'bg-red-500/10 text-red-500' : 'text-neutral-400 hover:text-neutral-200'}`}>
+            <Heart size={22} fill={location.pathname === '/wishlist' ? "currentColor" : "none"} className={location.pathname === '/wishlist' ? 'drop-shadow-[0_0_8px_rgba(239,68,68,0.6)]' : ''} />
+            {wishlistItems.length > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black flex items-center justify-center rounded-full shadow-[0_0_10px_rgba(239,68,68,0.8)]">{wishlistItems.length}</span>}
+          </div>
+          <span className={`text-[10px] font-bold tracking-wider uppercase ${location.pathname === '/wishlist' ? 'text-red-500' : 'text-neutral-500'}`}>Wishlist</span>
         </Link>
         <Link to="/cart" className="flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all duration-300 flex-1">
           <div className={`relative p-2 rounded-xl transition-all duration-300 ${location.pathname === '/cart' ? 'bg-amber-500/10 text-amber-500' : 'text-neutral-400 hover:text-neutral-200'}`}>

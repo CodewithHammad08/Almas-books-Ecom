@@ -51,6 +51,11 @@ const createOrder = asyncHandler(async (req, res) => {
         orderStatus: "pending"
     });
 
+    // Send order confirmation email (don't await to avoid blocking response, or catch error)
+    import("../services/email.service.js").then(({ sendOrderConfirmation }) => {
+        sendOrderConfirmation(req.user, order).catch(err => console.error("Email failed:", err));
+    });
+
     return res.status(201).json(new ApiResponse(201, order, "Order created successfully"));
 });
 

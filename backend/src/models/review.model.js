@@ -13,27 +13,17 @@ const ReviewSchema = new mongoose.Schema({
     },
     rating: {
         type: Number,
-        required: [true, "Rating is required"],
+        required: true,
         min: 1,
         max: 5
     },
-    title: {
-        type: String,
-        default: "",
-        maxlength: [100, "Review title too long"]
-    },
     comment: {
         type: String,
-        default: "",
-        maxlength: [1000, "Review comment too long"]
-    },
-    isVerifiedPurchase: {
-        type: Boolean,
-        default: false  // set to true if user has an order containing this product
+        required: true
     }
 }, { timestamps: true });
 
-// One review per user per product
+// Prevent multiple reviews from the same user on the same product
 ReviewSchema.index({ user: 1, product: 1 }, { unique: true });
 
 export const Review = mongoose.model("Review", ReviewSchema);
