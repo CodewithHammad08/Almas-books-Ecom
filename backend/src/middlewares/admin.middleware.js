@@ -1,10 +1,4 @@
-import { ApiError } from "../utils/ApiError.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
-
-export const isAdmin = asyncHandler(async(req, res, next) => {
-    if (req.user && (req.user.role === "admin" || req.user.role === "superadmin")) {
-        next();
-    } else {
-        throw new ApiError(403, "Not authorized as an admin");
-    }
-});
+// ── admin.middleware.js ───────────────────────────────────────────────────────
+// Legacy file preserved for backward compatibility with existing route imports.
+// All logic is now in auth.middleware.js → requireAdmin / isAdminRole.
+export { requireAdmin as isAdmin } from "./auth.middleware.js";

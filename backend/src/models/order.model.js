@@ -42,13 +42,13 @@ const OrderSchema = new mongoose.Schema({
     },
     paymentMethod: {
         type: String,
-        enum: ["COD", "Online", "QR"],
+        enum: ["COD", "Online", "QR", "Card"],  // ✅ matches controller ALLOWED_PAYMENT_METHODS
         required: true
     },
     paymentStatus: {
         type: String,
-        enum: ["pending", "paid", "failed", "refunded"],
-        default: "pending"
+        enum: ["unpaid", "paid", "failed", "refunded"],
+        default: "unpaid"  // ✅ aligned with order controller
     },
     transactionId: {
         type: String,
@@ -67,7 +67,7 @@ const OrderSchema = new mongoose.Schema({
         type: String,
         default: ""
     }
-}, { timestamps: true });
+}, { timestamps: true, strict: true }); // ✅ strict: reject undeclared fields (mass assignment protection)
 
 OrderSchema.pre("save", async function () {
     if (!this.orderNumber) {

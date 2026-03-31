@@ -37,6 +37,17 @@ export const AuthProvider = ({ children }) => {
         };
 
         verifySession();
+
+        // Listen for forced logout triggered by the axios 401 interceptor
+        // (fires when refresh token is also expired — true session end)
+        const handleForceLogout = () => {
+            setUser(null);
+            localStorage.removeItem('almas_user');
+            localStorage.removeItem('savedAddress');
+            localStorage.removeItem('cart');
+        };
+        window.addEventListener('auth:logout', handleForceLogout);
+        return () => window.removeEventListener('auth:logout', handleForceLogout);
     }, []);
 
     const refreshProfile = async () => {

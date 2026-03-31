@@ -1,1 +1,24 @@
+# Environment variables — NEVER commit these
 .env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+logs/
+err.log
+err2.txt
+
+# Temp uploads
+public/temp/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Editor artifacts
+.vscode/
+.idea/

@@ -63,7 +63,7 @@ AdminSchema.methods.generateAccessToken = function () {
     return jwt.sign(
         { _id: this._id, email: this.email, name: this.name, role: this.role, model: "Admin" },
         process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
+        { expiresIn: process.env.ACCESS_TOKEN_EXPIRY, algorithm: "HS256" } // ✅ explicit algorithm
     );
 };
 
@@ -71,7 +71,7 @@ AdminSchema.methods.generateRefreshToken = function () {
     return jwt.sign(
         { _id: this._id, model: "Admin" },
         process.env.REFRESH_TOKEN_SECRET,
-        { expiresIn: process.env.REFRESH_TOKEN_EXPIRY }
+        { expiresIn: process.env.REFRESH_TOKEN_EXPIRY, algorithm: "HS256" } // ✅ explicit algorithm
     );
 };
 

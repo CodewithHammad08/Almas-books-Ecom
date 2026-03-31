@@ -80,7 +80,7 @@ const AddressStep = ({ address, onChange, onNext }) => {
 };
 
 // ─── PAYMENT STEP ─────────────────────────────────────────────────────────────
-const PaymentStep = ({ method, onChange, onNext, onBack, total }) => {
+const PaymentStep = ({ method, onChange, onNext, onBack, total, placing = false }) => {
   const [cardData, setCardData] = useState({ number: '', name: '', expiry: '', cvv: '' });
   const [processing, setProcessing] = useState(false);
 
@@ -90,7 +90,7 @@ const PaymentStep = ({ method, onChange, onNext, onBack, total }) => {
     return v.length >= 3 ? `${v.slice(0, 2)}/${v.slice(2)}` : v;
   };
 
-  const isCardValid = method === 'COD' || (
+  const isCardValid = method === 'COD' || method === 'QR' || (
     cardData.number.replace(/\s/g, '').length === 16 &&
     cardData.name.trim() &&
     cardData.expiry.length === 5 &&
@@ -98,7 +98,7 @@ const PaymentStep = ({ method, onChange, onNext, onBack, total }) => {
   );
 
   const handlePay = async () => {
-    if (method === 'Online') {
+    if (method === 'Card') {
       setProcessing(true);
       await new Promise(r => setTimeout(r, 1800)); // simulate payment processing
       setProcessing(false);
@@ -107,6 +107,8 @@ const PaymentStep = ({ method, onChange, onNext, onBack, total }) => {
       onNext();
     }
   };
+
+  const isDisabled = (method === 'Card' && !isCardValid) || processing || placing;
 
   return (
     <div>
@@ -123,7 +125,7 @@ const PaymentStep = ({ method, onChange, onNext, onBack, total }) => {
         {[
           { id: 'QR', label: 'UPI / QR', icon: <QrCode size={22} />, sub: 'Scan & Pay Instantly' },
           { id: 'COD', label: 'Cash on Delivery', icon: <Banknote size={22} />, sub: 'Pay when you receive' },
-          { id: 'Online', label: 'Credit/Debit Card', icon: <CreditCard size={22} />, sub: 'Visa, Mastercard' },
+          { id: 'Card', label: 'Credit/Debit Card', icon: <CreditCard size={22} />, sub: 'Visa, Mastercard' },
         ].map(opt => (
           <button
             key={opt.id}
@@ -158,7 +160,7 @@ const PaymentStep = ({ method, onChange, onNext, onBack, total }) => {
       )}
 
       {/* Card Form */}
-      {method === 'Online' && (
+      {method === 'Card' && (
         <div className="space-y-4 mb-6">
           <div className="bg-gradient-to-br from-neutral-800 to-neutral-900 border border-neutral-700 rounded-2xl p-5">
             <div className="flex justify-between items-start mb-6">
@@ -198,11 +200,11 @@ const PaymentStep = ({ method, onChange, onNext, onBack, total }) => {
         </button>
         <button
           onClick={handlePay}
-          disabled={(method === 'Online' && !isCardValid) || processing}
+          disabled={isDisabled}
           className="flex-[2] bg-amber-500 hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed text-black font-black py-3.5 rounded-xl transition-all flex items-center justify-center gap-2"
         >
-          {processing ? (
-            <><div className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" /> Processing...</>
+          {(processing || placing) ? (
+            <><div className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" /> {placing ? 'Placing Order...' : 'Processing...'}</>
           ) : (
             <>{method === 'COD' ? 'Place Order' : method === 'QR' ? 'Proceed to QR' : `Pay ₹${total.toLocaleString()}`} <ArrowRight size={18} /></>
           )}
@@ -476,6 +478,15 @@ const CheckoutModal = ({ cartItems, subtotal, shipping, total, onClose, onSucces
   const [error, setError] = useState('');
 
   const handlePlaceOrder = async () => {
+    // Guard: prevent duplicate order if already placed (e.g. user went back from QR)
+    if (placedOrder) {
+      if (paymentMethod === 'QR') {
+        setPaymentStep('qr');
+      } else {
+        setStep(3);
+      }
+      return;
+    }
     setPlacing(true);
     setError('');
     try {
@@ -522,59 +533,63 @@ const CheckoutModal = ({ cartItems, subtotal, shipping, total, onClose, onSucces
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-neutral-900 border border-neutral-700 rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-neutral-800">
-          <h2 className="text-white font-bold text-lg">Checkout</h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors"><X size={20} /></button>
-        </div>
+    <>
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+        <div className="bg-neutral-900 border border-neutral-700 rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+            <h2 className="text-white font-bold text-lg">Checkout</h2>
+            <button onClick={onClose} className="p-2 rounded-full hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors"><X size={20} /></button>
+          </div>
 
-        <div className="p-6">
-          <StepIndicator step={step} />
+          <div className="p-6">
+            {step < 3 && <StepIndicator step={step} />}
 
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm p-3 rounded-xl mb-4 flex items-center gap-2">
-              ⚠️ {error}
-            </div>
-          )}
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm p-3 rounded-xl mb-4 flex items-center gap-2">
+                ⚠️ {error}
+              </div>
+            )}
 
-          {step === 1 && (
-            <AddressStep address={address} onChange={setAddress} onNext={() => setStep(2)} />
-          )}
+            {step === 1 && (
+              <AddressStep address={address} onChange={setAddress} onNext={() => setStep(2)} />
+            )}
 
-          {step === 2 && (
-            paymentStep === 'qr' ? (
-              <QRPaymentStep 
-                order={placedOrder} 
-                onConfirm={() => setStep(3)} 
-                onBack={() => { setPaymentStep('selection'); setStep(2); }} 
-              />
-            ) : (
-              <PaymentStep
-                method={paymentMethod}
-                onChange={setPaymentMethod}
-                total={total}
-                onBack={() => setStep(1)}
-                onNext={handlePlaceOrder}
-              />
-            )
-          )}
-
-          {step === 3 && (
-            <InvoiceModal
-              order={placedOrder}
-              address={address}
-              paymentMethod={paymentMethod}
-              cartItems={cartItems}
-              total={total}
-              shipping={shipping}
-              onClose={() => { onSuccess(); onClose(); }}
-            />
-          )}
+            {step === 2 && (
+              paymentStep === 'qr' ? (
+                <QRPaymentStep 
+                  order={placedOrder} 
+                  onConfirm={() => setStep(3)} 
+                  onBack={() => setPaymentStep('selection')} 
+                />
+              ) : (
+                <PaymentStep
+                  method={paymentMethod}
+                  onChange={setPaymentMethod}
+                  total={total}
+                  onBack={() => setStep(1)}
+                  onNext={handlePlaceOrder}
+                  placing={placing}
+                />
+              )
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Invoice modal rendered at root level so fixed positioning works correctly */}
+      {step === 3 && placedOrder && (
+        <InvoiceModal
+          order={placedOrder}
+          address={address}
+          paymentMethod={paymentMethod}
+          cartItems={cartItems}
+          total={total}
+          shipping={shipping}
+          onClose={() => { onSuccess(); onClose(); }}
+        />
+      )}
+    </>
   );
 };
 

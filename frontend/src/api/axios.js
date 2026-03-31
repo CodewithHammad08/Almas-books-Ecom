@@ -1,28 +1,62 @@
 import axios from 'axios';
 
-// Create an instance of axios
+// Create an Axios instance — proxy handles baseURL in dev (vite.config.js)
 const api = axios.create({
-    // Because we use a proxy in vite.config.js, we don't need the full URL here during development
-    // Just the base path for your API
-    baseURL: '/api', 
-    // This ensures cookies are sent with requests (important for auth tokens)
-    withCredentials: true,
+    baseURL: '/api',
+    withCredentials: true, // Send cookies (httpOnly auth cookies) on every request
 });
 
-// Response interceptor for handling common errors, e.g., token expiration
+// Track whether a refresh is already in progress to prevent parallel refresh storms
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error) => {
+    failedQueue.forEach(({ resolve, reject }) => {
+        if (error) reject(error);
+        else resolve();
+    });
+    failedQueue = [];
+};
+
+// ── Response interceptor ──────────────────────────────────────────────────────
 api.interceptors.response.use(
-    (response) => {
-        return response;
-    },
+    (response) => response,
     async (error) => {
         const originalRequest = error.config;
-        
-        // If error is 401 Unauthorized (and it's not the login request),
-        // you might want to try refreshing the token here depending on your backend logic
-        if (error.response?.status === 401 && !originalRequest._retry) {
-            // handle error here or let the components handle it
+
+        // Only intercept 401s that aren't already a retry or the refresh call itself
+        if (
+            error.response?.status === 401 &&
+            !originalRequest._retry &&
+            !originalRequest.url?.includes('/auth/refresh') &&
+            !originalRequest.url?.includes('/auth/login')
+        ) {
+            if (isRefreshing) {
+                // Queue this request until the refresh completes
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject });
+                }).then(() => api(originalRequest))
+                  .catch((err) => Promise.reject(err));
+            }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            try {
+                // Attempt to get a new access token using the httpOnly refresh cookie
+                await api.post('/auth/refresh');
+                processQueue(null);
+                return api(originalRequest); // Retry the original failed request
+            } catch (refreshError) {
+                processQueue(refreshError);
+                // Refresh failed — session is truly expired, redirect to login
+                window.dispatchEvent(new CustomEvent('auth:logout'));
+                return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
+            }
         }
-        
+
         return Promise.reject(error);
     }
 );

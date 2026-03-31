@@ -59,7 +59,7 @@ UserSchema.methods.generateAccessToken = function () {
     return jwt.sign(
         { _id: this._id, email: this.email, name: this.name, role: "user", model: "User" },
         process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
+        { expiresIn: process.env.ACCESS_TOKEN_EXPIRY, algorithm: "HS256" } // ✅ explicit algorithm
     );
 };
 
@@ -67,7 +67,7 @@ UserSchema.methods.generateRefreshToken = function () {
     return jwt.sign(
         { _id: this._id, model: "User" },
         process.env.REFRESH_TOKEN_SECRET,
-        { expiresIn: process.env.REFRESH_TOKEN_EXPIRY }
+        { expiresIn: process.env.REFRESH_TOKEN_EXPIRY, algorithm: "HS256" } // ✅ explicit algorithm
     );
 };
 
