@@ -96,56 +96,6 @@ app.get("/", (req, res) => {
     res.json({ success: true, message: "Almas Books API is running." });
 });
 
-// ── Debug Route (Temporary) ─────────────────────────────────────────────────
-import { Admin } from "./models/admin.model.js";
-import { User } from "./models/user.model.js";
-app.get("/api/debug-users", async (req, res) => {
-    try {
-        const admins = await Admin.find();
-        const specificAdmin = await Admin.findOne({ email: "hammaddalvi905@gmail.com" });
-        const users = await User.find().select('email password isActive authProvider');
-        res.status(200).json({ admins, specificAdmin, users });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
-});
-
-// ── Seed Admins (Temporary) ─────────────────────────────────────────────────
-app.get("/api/seed-admins", async (req, res) => {
-    try {
-        const ADMINS = [
-            {
-                name: "Hammad",
-                email: "hammaddalvi905@gmail.com",
-                password: "Hammad@2006",
-                role: "superadmin",
-                phone: ""
-            },
-            {
-                name: "Owner",
-                email: "zubair36@gmail.com",
-                password: "password123",
-                role: "admin",
-                phone: ""
-            }
-        ];
-
-        const results = [];
-        for (const data of ADMINS) {
-            const existing = await Admin.findOne({ email: data.email });
-            if (existing) {
-                results.push(`Already exists: ${data.email}`);
-                continue;
-            }
-            await Admin.create(data);
-            results.push(`Created: ${data.email}`);
-        }
-        res.status(200).json({ success: true, results });
-    } catch (e) {
-        res.status(500).json({ success: false, error: e.stack || e.message });
-    }
-});
-
 // ── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((req, res) => {
     res.status(404).json({ success: false, message: "Route not found." });
