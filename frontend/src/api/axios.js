@@ -2,7 +2,8 @@ import axios from 'axios';
 
 // Create an Axios instance — proxy handles baseURL in dev (vite.config.js)
 const api = axios.create({
-    baseURL: '/api',
+    // Add /api if the user provided the base domain only, otherwise default to proxy /api
+    baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api',
     withCredentials: true, // Send cookies (httpOnly auth cookies) on every request
 });
 
