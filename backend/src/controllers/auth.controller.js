@@ -14,15 +14,15 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // In production, HTTPS + secure:true provides CSRF protection.
 const accessCookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: true,
+    sameSite: "none",
     maxAge: 15 * 60 * 1000                   // 15 minutes
 };
 
 const refreshCookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: true,
+    sameSite: "none",
     maxAge: 7 * 24 * 60 * 60 * 1000         // 7 days
 };
 

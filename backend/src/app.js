@@ -25,19 +25,7 @@ app.use(helmet({
 
 // ── CORS — explicit multi-origin allowlist ───────────────────────────────────
 app.use(cors({
-    origin: (origin, callback) => {
-        const allowedOrigins = (process.env.CORS_ORIGIN || "")
-            .split(",")
-            .map(o => o.trim())
-            .filter(Boolean);
-
-        // Allow server-to-server requests (no origin) and whitelisted origins
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error(`CORS: Origin '${origin}' not allowed`));
-        }
-    },
+    origin: process.env.CORS_ORIGIN === "http://localhost:5173" ? "http://localhost:5173" : "https://almas-books-ecom.vercel.app",
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
